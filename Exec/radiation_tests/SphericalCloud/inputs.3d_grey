@@ -1,0 +1,66 @@
+# This is for regression testing
+max_step = 1
+
+# PROBLEM SIZE & GEOMETRY
+geometry.coord_sys   =  0 
+geometry.prob_lo     = -6.172e+17    -6.172e+17   -6.172e+17
+geometry.prob_hi     =  6.172e+17     6.172e+17    6.172e+17
+
+amr.max_level        = 0
+amr.ref_ratio 	     = 2 2 2 2
+amr.regrid_int	     = 2 2 2 2
+amr.blocking_factor  = 4
+amr.n_error_buf	     = 2 2 2 2
+amr.grid_eff	     = 0.7
+amr.n_cell           = 256 256 256
+amr.max_grid_size    = 64
+amr.probin_file      = probin.3d_grey
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# 0 = Interior           3 = Symmetry
+# 1 = Inflow             4 = SlipWall
+# 2 = Outflow            5 = NoSlipWall
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+castro.lo_bc       =  2 2 2
+castro.hi_bc       =  2 2 2
+
+# WHICH PHYSICS
+castro.do_grav	     = 0
+castro.do_hydro      = 1
+castro.do_radiation  = 0
+castro.do_reflux     = 1
+castro.do_react	     = 0
+
+# TIME STEP CONTROL
+castro.cfl	     = 0.6
+castro.init_shrink   = 1.0
+castro.change_max    = 1.05
+castro.initial_dt    = 1.e-18
+castro.dt_cutoff     = 1.e-20
+castro.fixed_dt	     = 1.e-15
+
+# DIAGNOSTICS & VERBOSITY
+amr.v                = 1       # verbosity in Amr
+castro.v	     = 1
+castr.sum_interval   = 1
+
+# CHECKPOINT FILES
+amr.checkpoint_files_output = 1     # checkpoint or not
+amr.check_file              = chk   # root name of checkpoint file
+amr.check_int               = 1   # number of timesteps between checkpoints
+
+# PLOTFILES
+amr.plot_files_output = 1     # make plot files or not
+amr.plot_file         = plt  
+amr.plot_int          = 1
+amr.derive_plot_vars  = ALL
+
+# MESSAGE
+# During runtime, the user can control a few things using command line in the run directory:
+# "touch dump_and_continue": checkpoint and make plot file, and then continue
+# "touch dump_and_stop"    : checkpoint and make plot file, and then stop
+# "touch stop_run"         : stop without checkpointing or making plot file
+amr.message_int = 1        # check message every ? steps
+
+# DISTMAP STRAT
+DistributionMapping.strategy = SFC
