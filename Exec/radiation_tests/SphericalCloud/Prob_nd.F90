@@ -2,6 +2,8 @@ subroutine amrex_probinit(init, name, namlen, problo, probhi) bind(C, name="amre
 
   use probdata_module
   use network, only: nspec
+  use eos_module
+  use eos_type_module, only: eos_t, eos_input_rt
   use amrex_error_module
   use amrex_fort_module, only: rt => amrex_real
   implicit none
@@ -10,9 +12,10 @@ subroutine amrex_probinit(init, name, namlen, problo, probhi) bind(C, name="amre
   integer, intent(in) :: name(namlen)
   double precision, intent(in) :: problo(:), probhi(:)
   
+  type(eos_t) :: eos_state
   integer :: untin, i
   
-  namelist /fortin/ r_cloud, rho_cloud, T_0, v_max, alpha
+  namelist /fortin/ rho_cloud, r_cloud, T_0, v_max, alpha
   
   !     Build "probin" filename -- the name of file containing fortin namelist.
   !
@@ -35,17 +38,35 @@ subroutine amrex_probinit(init, name, namlen, problo, probhi) bind(C, name="amre
   allocate(alpha)
   
   ! set defaults
-  r_cloud = 3.086d17
   rho_cloud = 1.6156913825823182d-18
+  r_cloud = 3.086d17
   T_0 = 1.d5
   v_max = 0.d0
-  alpha = 1.d-3
+  alpha = 1.d-5
 
   ! Read probin file
   untin = 9
   open(untin,file=probin(1:namlen),form='formatted',status='old')
   read(untin,fortin)
   close(unit=untin)
+  
+  eos_state % rho = rho_cloud
+  eos_state % T   = T_0
+  eos_state % xn  = 0.e0_rt
+  eos_state % xn(1) = 1.e0_rt
+
+  call eos(eos_input_rt, eos_state)
+
+  rhoe_cloud = rho_cloud * eos_state % e
+
+  eos_state % rho = alpha * rho_cloud
+  eos_state % T   = alpha * T_0
+  eos_state % xn  = 0.e0_rt
+  eos_state % xn(1) = 1.e0_rt
+
+  call eos(eos_input_rt, eos_state)
+
+  rhoe_ext = alpha * rho_cloud * eos_state % e
 
 end subroutine amrex_probinit
 
@@ -85,7 +106,7 @@ subroutine ca_initdata(lo, hi, state, s_lo, s_hi, dx, problo) bind(C, name='ca_i
   real(rt), intent(inout) :: state(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NVAR)
   real(rt), intent(in) :: dx(3), problo(3)
 
-  real(rt) :: x, y, z, r, fac
+  real(rt) :: x, y, z, r, fac, rhoe
   integer :: i, j, k
 
   do k = lo(3), hi(3)
@@ -103,15 +124,18 @@ subroutine ca_initdata(lo, hi, state, s_lo, s_hi, dx, problo) bind(C, name='ca_i
            
            if(r > r_cloud) then
               fac = alpha
+              rhoe = rhoe_ext
            else
               fac = 1.e0_rt
+              rhoe = rhoe_cloud
            end if
-           
+
            state(i, j, k, URHO) = fac * rho_cloud
            state(i, j, k, UMX) = fac * v_max * x * rho_cloud / r_cloud
            state(i, j, k, UMY) = fac * v_max * y * rho_cloud / r_cloud
            state(i, j, k, UMZ) = fac * v_max * z * rho_cloud / r_cloud
-           state(i, j, k, UTEMP) = fac * T_0
+           state(i, j, k, UEDEN) = rhoe
+           state(i, j, k, UEINT) = rhoe
 
            ! set the composition to be all in the first species
            state(i, j, k, UFS:UFS+nspec-1) = state(i, j, k, URHO) / nspec
