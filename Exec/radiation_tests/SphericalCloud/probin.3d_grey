@@ -1,10 +1,10 @@
 &fortin
 
   r_cloud = 3.086d17
-  rho_cloud = 1.6156913825823182d0
+  rho_cloud = 1.6156913825823182d-18
   T_0 = 1.d5
   v_max = 0.d0
-  alpha = 1.e-3
+  alpha = 1.e-5
 /
 
 &extern

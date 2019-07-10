@@ -1,27 +1,26 @@
-COMP	   = gnu
+PRECISION  = DOUBLE
+PROFILE    = FALSE
+
+DEBUG      = FALSE
 
 DIM        = 3
 
+COMP	   = gnu
+
 USE_MPI    = TRUE
-DEBUG      = FALSE
+USE_OMP    = FALSE
 
-PROFILE    = FALSE
+GPU_COMPATIBLE_PROBLEM = TRUE
 
-USE_RAD = FALSE
-USE_NEUTRINO = FALSE
+# define the location of the CASTRO top directory
+CASTRO_HOME  := ../../..
 
-CASTRO_HOME = ../../..
-
+# This sets the EOS directory in Castro/EOS
 EOS_DIR     := gamma_law
 
+# This sets the network directory in Castro/Networks
 NETWORK_DIR := general_null
-NETWORK_INPUTS := gammalaw.net
-
-Opacity_dir := null
-
-# number of radiation groups - this needs to correspond to radiation.nGroups in
-# the inputs file
-NGROUPS := 100
+GENERAL_NET_INPUTS = $(CASTRO_HOME)/Microphysics/networks/$(NETWORK_DIR)/gammalaw.net
 
 Bpack   := ./Make.package
 Blocs   := .
