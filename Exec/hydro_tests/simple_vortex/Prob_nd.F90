@@ -21,7 +21,7 @@ subroutine amrex_probinit (init, name, namlen, problo, probhi) bind(c)
   type(eos_t) :: eos_state
   integer :: untin, i
 
-  namelist /fortin/ rho, temp, vel
+  namelist /fortin/ rho, temp, omega
 
   ! Build "probin" filename -- the name of file containing fortin namelist.
   integer, parameter :: maxlen = 256
@@ -38,7 +38,7 @@ subroutine amrex_probinit (init, name, namlen, problo, probhi) bind(c)
   ! Set namelist defaults
   rho = 1.e0_rt
   temp = 3.e2_rt
-  vel = 1.e3_rt
+  omega = 1.e3_rt
 
   ! read namelists
   untin = 9
@@ -76,7 +76,7 @@ subroutine ca_initdata(level, time, lo, hi, nscal, &
   real(rt), intent(inout) :: state(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NVAR)
 
   integer :: i, j, k
-  real(rt) :: x, y, r, cos_phi, sin_phi
+  real(rt) :: x, y, r, cos_phi, sin_phi, vel
 
   do k = lo(3), hi(3)
     
@@ -89,6 +89,7 @@ subroutine ca_initdata(level, time, lo, hi, nscal, &
         r = sqrt(x**2 + y**2)
         cos_phi = x/r
         sin_phi = y/r
+        vel = omega * r
         
         ! Want momentum vector to point in the \hat{\phi} direction
         ! rho * vel * (-sin_phi * \hat{x} + cos_phi * \hat{y})

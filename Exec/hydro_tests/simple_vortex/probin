@@ -1,7 +1,7 @@
 &fortin
 
-  rho = 1.d6
-  temp = 6.d8
-  vel = 1.d3
+  rho = 1.d0
+  temp = 3.d2
+  omega = 1.d3
   
 /

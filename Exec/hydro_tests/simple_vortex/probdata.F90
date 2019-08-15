@@ -1,6 +1,6 @@
 module probdata_module
 
       use amrex_fort_module, only: rt => amrex_real
-      real(rt), save :: rho, temp, vel, rhoe
+      real(rt), save :: rho, temp, omega, rhoe
 
 end module probdata_module
