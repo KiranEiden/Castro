@@ -1,0 +1,7 @@
+&fortin
+
+  rho = 1.d6
+  temp = 6.d8
+  vel = 1.d3
+  
+/
