@@ -274,10 +274,10 @@ Castro::advance_particles(int iteration, Real time, Real dt)
 	    for (MFIter mfi(Ucc,true); mfi.isValid(); ++mfi)
 	    {
 		const Box& bx = mfi.growntilebox();
-		S[mfi].invert(1.0, bx, 0, 1);
+		S[mfi].invert<RunOn::Host>(1.0, bx, 0, 1);
 		for (int dir=0; dir < BL_SPACEDIM; ++dir) {
-		    Ucc[mfi].copy(S[mfi], bx, dir+1, bx, dir, 1);
-		    Ucc[mfi].mult(S[mfi], bx, 0, dir);
+		    Ucc[mfi].copy<RunOn::Host>(S[mfi], bx, dir+1, bx, dir, 1);
+		    Ucc[mfi].mult<RunOn::Host>(S[mfi], bx, 0, dir);
 		}
 	    }
 	}

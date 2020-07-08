@@ -29,7 +29,7 @@ contains
                                    adv_lo(3):adv_hi(3), NVAR)
     real(rt), intent(in), value :: time
 
-    integer i, j, k, n
+    integer i, j, k, n, ir, jr
     
     ! Need to reflect over the line y = x and fill with the values
     ! along that boundary.
@@ -41,15 +41,18 @@ contains
        do k = adv_lo(3), adv_hi(3)
           do j = adv_lo(2), adv_hi(2)
              do i = adv_lo(1), domlo(1)-1
-                adv(i, j, k, URHO) = adv(j, i+1, k, URHO)
-                write(*,*) adv(i, j, k, URHO)
-                adv(i, j, k, UMX) = -adv(j, i+1, k, UMY)
-                adv(i, j, k, UMY) = adv(j, i+1, k, UMX)
-                adv(i, j, k, UMZ) = adv(j, i+1, k, UMZ)
-                adv(i, j, k, UFS) = adv(j, i+1, k, URHO)
-                adv(i, j, k, UEINT) = adv(j, i+1, k, UEINT)
-                adv(i, j, k, UEDEN) = adv(j, i+1, k, UEDEN)
-                adv(i, j, k, UTEMP) = adv(j, i+1, k, UTEMP)
+                ir = j
+                jr = domlo(2) + domlo(1) - i
+                write(*,*) ir, jr
+                write(*,*) adv(ir, jr, k, URHO)
+                adv(i, j, k, URHO) = adv(ir, jr, k, URHO)
+                adv(i, j, k, UMX) = -adv(ir, jr, k, UMY)
+                adv(i, j, k, UMY) = adv(ir, jr, k, UMX)
+                adv(i, j, k, UMZ) = adv(ir, jr, k, UMZ)
+                adv(i, j, k, UFS) = adv(ir, jr, k, URHO)
+                adv(i, j, k, UEINT) = adv(ir, jr, k, UEINT)
+                adv(i, j, k, UEDEN) = adv(ir, jr, k, UEDEN)
+                adv(i, j, k, UTEMP) = adv(ir, jr, k, UTEMP)
              end do
           end do
        end do
@@ -60,14 +63,16 @@ contains
        do k = adv_lo(3), adv_hi(3)
           do j = adv_lo(2), adv_hi(2)
              do i = domhi(1)+1, adv_hi(1)
-                 adv(i, j, k, URHO) = adv(j, i-1, k, URHO)
-                 adv(i, j, k, UMX) = -adv(j, i-1, k, UMY)
-                 adv(i, j, k, UMY) = adv(j, i-1, k, UMX)
-                 adv(i, j, k, UMZ) = adv(j, i-1, k, UMZ)
-                 adv(i, j, k, UFS) = adv(j, i-1, k, URHO)
-                 adv(i, j, k, UEINT) = adv(j, i-1, k, UEINT)
-                 adv(i, j, k, UEDEN) = adv(j, i-1, k, UEDEN)
-                 adv(i, j, k, UTEMP) = adv(j, i-1, k, UTEMP)
+                ir = j
+                jr = domhi(2) - (i - domhi(1))
+                adv(i, j, k, URHO) = adv(ir, jr, k, URHO)
+                adv(i, j, k, UMX) = -adv(ir, jr, k, UMY)
+                adv(i, j, k, UMY) = adv(ir, jr, k, UMX)
+                adv(i, j, k, UMZ) = adv(ir, jr, k, UMZ)
+                adv(i, j, k, UFS) = adv(ir, jr, k, URHO)
+                adv(i, j, k, UEINT) = adv(ir, jr, k, UEINT)
+                adv(i, j, k, UEDEN) = adv(ir, jr, k, UEDEN)
+                adv(i, j, k, UTEMP) = adv(ir, jr, k, UTEMP)
              end do
           end do
        end do
@@ -78,14 +83,16 @@ contains
        do k = adv_lo(3), adv_hi(3)
           do j = adv_lo(2), domlo(2)-1
              do i = adv_lo(1), adv_hi(1)
-                 adv(i, j, k, URHO) = adv(j+1, i, k, URHO)
-                 adv(i, j, k, UMX) = -adv(j+1, i, k, UMY)
-                 adv(i, j, k, UMY) = adv(j+1, i, k, UMX)
-                 adv(i, j, k, UMZ) = adv(j+1, i, k, UMZ)
-                 adv(i, j, k, UFS) = adv(j+1, i, k, URHO)
-                 adv(i, j, k, UEINT) = adv(j+1, i, k, UEINT)
-                 adv(i, j, k, UEDEN) = adv(j+1, i, k, UEDEN)
-                 adv(i, j, k, UTEMP) = adv(j+1, i, k, UTEMP)
+                ir = domlo(1) + domlo(2) - j
+                jr = i
+                adv(i, j, k, URHO) = adv(ir, jr, k, URHO)
+                adv(i, j, k, UMX) = -adv(ir, jr, k, UMY)
+                adv(i, j, k, UMY) = adv(ir, jr, k, UMX)
+                adv(i, j, k, UMZ) = adv(ir, jr, k, UMZ)
+                adv(i, j, k, UFS) = adv(ir, jr, k, URHO)
+                adv(i, j, k, UEINT) = adv(ir, jr, k, UEINT)
+                adv(i, j, k, UEDEN) = adv(ir, jr, k, UEDEN)
+                adv(i, j, k, UTEMP) = adv(ir, jr, k, UTEMP)
              end do
           end do
        end do
@@ -96,14 +103,16 @@ contains
        do k = adv_lo(3), adv_hi(3)
           do j = domhi(2)+1, adv_hi(2)
              do i = adv_lo(1), adv_hi(1)
-                 adv(i, j, k, URHO) = adv(j-1, i, k, URHO)
-                 adv(i, j, k, UMX) = -adv(j-1, i, k, UMY)
-                 adv(i, j, k, UMY) = adv(j-1, i, k, UMX)
-                 adv(i, j, k, UMZ) = adv(j-1, i, k, UMZ)
-                 adv(i, j, k, UFS) = adv(j-1, i, k, URHO)
-                 adv(i, j, k, UEINT) = adv(j-1, i, k, UEINT)
-                 adv(i, j, k, UEDEN) = adv(j-1, i, k, UEDEN)
-                 adv(i, j, k, UTEMP) = adv(j-1, i, k, UTEMP)
+                ir = domhi(1) - (j - domhi(2))
+                jr = i
+                adv(i, j, k, URHO) = adv(ir, jr, k, URHO)
+                adv(i, j, k, UMX) = -adv(ir, jr, k, UMY)
+                adv(i, j, k, UMY) = adv(ir, jr, k, UMX)
+                adv(i, j, k, UMZ) = adv(ir, jr, k, UMZ)
+                adv(i, j, k, UFS) = adv(ir, jr, k, URHO)
+                adv(i, j, k, UEINT) = adv(ir, jr, k, UEINT)
+                adv(i, j, k, UEDEN) = adv(ir, jr, k, UEDEN)
+                adv(i, j, k, UTEMP) = adv(ir, jr, k, UTEMP)
              end do
           end do
        end do
@@ -132,7 +141,7 @@ contains
     real(rt), intent(inout) :: adv(adv_lo(1):adv_hi(1), adv_lo(2):adv_hi(2), adv_lo(3):adv_hi(3))
     real(rt), intent(in), value :: time
 
-    integer :: i, j, k
+    integer :: i, j, k, ir, jr
 
     !$gpu
 
@@ -141,7 +150,9 @@ contains
        do k = adv_lo(3), adv_hi(3)
           do j = adv_lo(2), adv_hi(2)
              do i = adv_lo(1), domlo(1)-1
-                adv(i, j, k) = adv(j, i+1, k)
+                ir = j
+                jr = domlo(2) + domlo(1) - i
+                adv(i, j, k) = adv(ir, jr, k)
              end do
           end do
        end do
@@ -152,7 +163,9 @@ contains
        do k = adv_lo(3), adv_hi(3)
           do j = adv_lo(2), adv_hi(2)
              do i = domhi(1)+1, adv_hi(1)
-                adv(i, j, k) = adv(j, i-1, k)
+                ir = j
+                jr = domhi(2) - (i - domhi(1))
+                adv(i, j, k) = adv(ir, jr, k)
              end do
           end do
        end do
@@ -163,7 +176,9 @@ contains
        do k = adv_lo(3), adv_hi(3)
           do j = adv_lo(2), domlo(2)-1
              do i = adv_lo(1), adv_hi(1)
-                adv(i, j, k) = adv(j+1, i, k)
+                ir = domlo(1) + domlo(2) - j
+                jr = i
+                adv(i, j, k) = adv(ir, jr, k)
              end do
           end do
        end do
@@ -174,7 +189,9 @@ contains
        do k = adv_lo(3), adv_hi(3)
           do j = domhi(2)+1, adv_hi(2)
              do i = adv_lo(1), adv_hi(1)
-                adv(i, j, k) = adv(j-1, i, k)
+                ir = domhi(1) - (j - domhi(2))
+                jr = i
+                adv(i, j, k) = adv(ir, jr, k)
              end do
           end do
        end do
