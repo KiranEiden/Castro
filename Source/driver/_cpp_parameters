@@ -561,7 +561,10 @@ reset_checkpoint_time        Real          -1.e200
 # and you set it to value greater than this default value.
 reset_checkpoint_step        int           -1
 
-
+# do we initialize Fortran modules?
+# (if we create multiple Amr objects then we do not want to
+# re-initialize those modules)
+do_initialize_fortran        int           1
 
 
 

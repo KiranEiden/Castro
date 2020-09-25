@@ -212,7 +212,8 @@ Castro::variableSetUp ()
   probdata_init(probin_file_name.dataPtr(), &probin_file_length);
 
   // Read in the input values to Fortran.
-  ca_set_castro_method_params();
+  if (do_initialize_fortran)
+    ca_set_castro_method_params();
 
   // Initialize the runtime parameters for any of the external
   // microphysics (these are the parameters that are in the &extern
@@ -239,7 +240,8 @@ Castro::variableSetUp ()
   }
 
   // Initialize the Fortran Microphysics
-  ca_microphysics_init();
+  if (do_initialize_fortran)
+    ca_microphysics_init();
 
   // now initialize the C++ Microphysics
 #ifdef CXX_REACTIONS
@@ -295,7 +297,8 @@ Castro::variableSetUp ()
   const Real run_strt = ParallelDescriptor::second() ;
 
   // set the conserved, primitive, aux, and godunov indices in Fortran
-  ca_set_method_params(dm);
+  if (do_initialize_fortran)
+    ca_set_method_params(dm);
 
   // setup the passive maps -- this follows the same logic as the
   // Fortran versions in ca_set_method_params
@@ -335,14 +338,18 @@ Castro::variableSetUp ()
 
   const int coord_type = dgeom.Coord();
 
-  ca_set_problem_params(dm,phys_bc.lo(),phys_bc.hi(),
-                        Interior,Inflow,Outflow,Symmetry,SlipWall,NoSlipWall,coord_type,
-                        dgeom.ProbLo(),dgeom.ProbHi());
+  if (do_initialize_fortran)
+  {
+    ca_set_problem_params(dm,phys_bc.lo(),phys_bc.hi(),
+                          Interior,Inflow,Outflow,Symmetry,SlipWall,NoSlipWall,coord_type,
+                          dgeom.ProbLo(),dgeom.ProbHi());
+  }
 
   // Read in the parameters for the tagging criteria
   // and store them in the Fortran module.
 
-  ca_get_tagging_params(probin_file_name.dataPtr(),&probin_file_length);
+  if (do_initialize_fortran)
+    ca_get_tagging_params(probin_file_name.dataPtr(),&probin_file_length);
 
 #ifdef SPONGE
   // Initialize the sponge
@@ -365,7 +372,8 @@ Castro::variableSetUp ()
 
   // Read in the ambient state parameters.
 
-  ca_get_ambient_params(probin_file_name.dataPtr(),&probin_file_length);
+  if (do_initialize_fortran)
+    ca_get_ambient_params(probin_file_name.dataPtr(),&probin_file_length);
 
   Interpolater* interp;
 

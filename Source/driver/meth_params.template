@@ -93,9 +93,9 @@ contains
     type (amrex_parmparse) :: pp
 
 #ifdef RADIATION
-    allocate(fspace_type)
-    allocate(do_inelastic_scattering)
-    allocate(comoving)
+    if (.not. allocated(fspace_type)) allocate(fspace_type)
+    if (.not. allocated(do_inelastic_scattering)) allocate(do_inelastic_scattering)
+    if (.not. allocated(comoving)) allocate(comoving)
 #endif
     allocate(xl_ext, yl_ext, zl_ext, xr_ext, yr_ext, zr_ext)
 
@@ -105,7 +105,7 @@ contains
 #ifdef GRAVITY
     ! Set the gravity type integer
 
-    allocate(gravity_type_int)
+    if (.not. allocated(gravity_type_int)) allocate(gravity_type_int)
 
     if (gravity_type == "ConstantGrav") then
        gravity_type_int = ConstantGrav

@@ -188,9 +188,9 @@ class Param:
         # for a character, we need to allocate its length.  We allocate
         # to 1, and the Fortran parmparse will resize
         if self.dtype == "string":
-            ostr += "    allocate(character(len=1)::{})\n".format(name)
+            ostr += "    if (.not. allocated({})) allocate(character(len=1)::{})\n".format(name, name)
         else:
-            ostr += "    allocate({})\n".format(name)
+            ostr += "    if (.not. allocated({})) allocate({})\n".format(name, name)
 
         if not self.debug_default is None:
             ostr += "#ifdef AMREX_DEBUG\n"

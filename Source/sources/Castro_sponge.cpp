@@ -111,6 +111,7 @@ Castro::construct_new_sponge_source(MultiFab& source, MultiFab& state_old, Multi
 void
 Castro::sponge_init()
 {
+  if (do_initialize_fortran)
     ca_allocate_sponge_params();
 }
 
