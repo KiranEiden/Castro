@@ -15,7 +15,11 @@ endif
 CEXE_sources += Castro_setup.cpp
 CEXE_sources += Castro_io.cpp
 CEXE_sources += CastroBld.cpp
-CEXE_sources += main.cpp
+ifeq ($(USE_TRANSMOGRIFIER), TRUE)
+  CEXE_sources += main_transmogrifier.cpp
+else
+  CEXE_sources += main.cpp
+endif
 
 CEXE_headers += Castro.H
 CEXE_headers += castro_limits.H

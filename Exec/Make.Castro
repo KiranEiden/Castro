@@ -63,6 +63,16 @@ USE_ALL_CASTRO ?= TRUE
 
 USE_AMR_CORE ?= TRUE
 
+# are we compiling Castro for the Transmogrifier?
+USE_TRANSMOGRIFIER ?= FALSE
+
+# tells AMReX to disable dimensionality checks when loading a checkpoint
+USE_PERMISSIVE_SPACEDIM ?= FALSE
+
+ifeq ($(USE_PERMISSIVE_SPACEDIM), TRUE)
+  DEFINES += -DAMREX_PERMISSIVE_SPACEDIM
+endif
+
 # hack for now -- CUDA processing doesn't respect functions blocked by
 # ifdefs, so we need to define EXTRA_THERMO
 ifeq ($(USE_CUDA),TRUE)
