@@ -7,7 +7,7 @@ import yt
 from yt.units import cm
 from enum import Enum
 from collections import defaultdict, deque
-import numpy as np
+import matplotlib.pyplot as plt
 
 ################################
 # set up parser and parse args #
@@ -31,12 +31,17 @@ transform_help = """Operation to apply to each extra dimension. Can be of format
 branch_help = """Whether to use the upper branch or lower branch when computing location. The upper
         branch is everything past the first instance of the local maximum, while the lower branch
         is everything before that. 0 => lower, 1 => upper. Default is upper."""
-global_help = "Whether to use the global maximum across all snapshots or a local maximum."
+global_help = "If supplied, will use the global maximum across all snapshots instead of a local maximum."
+units_help = "If supplied, will write out units as the second row in all data files."
+plot_help = "A list of fields to plot profiles of."
+plot_directory_help = "A directory to output the plots to. If it does not exist, it will be created."
+wrl_help = """File to write data on local maxima to. Will write the times to the first column, along
+with a column for each field used in a metric."""
 
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('datasets', nargs='+', help=datasets_help)
 parser.add_argument('-o', '--out', default='front_tracking.dat', help=out_help)
-parser.add_argument('-m', '--metrics', nargs='*', default=['enuc', '1e-3'], help=metrics_help)
+parser.add_argument('-m', '--metrics', nargs='*', default=['enuc', '1e-2', '1e-3'], help=metrics_help)
 parser.add_argument('-x', '--xlim', nargs=2, type=float, metavar=('LOWER', 'UPPER'), help=xlim_help)
 parser.add_argument('-y', '--ylim', nargs=2, type=float, metavar=('LOWER', 'UPPER'), help=ylim_help)
 parser.add_argument('-z', '--zlim', nargs=2, type=float, metavar=('LOWER', 'UPPER'), help=zlim_help)
@@ -44,6 +49,10 @@ parser.add_argument('-r', '--res', nargs=2, type=int, help=res_help)
 parser.add_argument('-t', '--transform', nargs='+', help=transform_help)
 parser.add_argument('-b', '--branch', default=1, help=branch_help)
 parser.add_argument('-gmax', '--use_global_max', action='store_true', help=global_help)
+parser.add_argument('-u', '--units', action='store_true', help=units_help)
+parser.add_argument('-p', '--plot', nargs='+', help=plot_help)
+parser.add_argument('-pdir', '--plot_directory', help=plot_directory_help)
+parser.add_argument('--write_local_maxima_to', help=wrl_help)
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -89,7 +98,7 @@ def process_args(args):
             item = item.split(':')
             if len(item) == 1:
                 item, = item
-                transform[Transform(int(item))].append(args.spacedim-i-1)
+                transform[Transform(int(item))].append(3-i-1)
             elif len(item) == 2:
                 ind, t = map(int, item)
                 transform[Transform(t)].append(ind)
@@ -101,7 +110,7 @@ def process_args(args):
     if args.res is None:
         args.res = ds.domain_dimensions
     if len(args.res) < 3:
-        args.res += [1] * (3 - args.res)
+        args.res += [1] * (3 - len(args.res))
         
     # Eventually may want to generalize this to allow multiple axes
     # Then we would just return a point in 2D or 3D space
@@ -185,14 +194,20 @@ class Metrics:
     
     def __init__(self, ds, args):
         
+        # Complete set of fields, including position
         self.__dict__.update(self.makefrbs(ds, args))
+        
+        # Other parameters
         self.time = ds.current_time
         self._metrics = args.metrics
         self._upper_branch = args.branch > 0
         self._use_global_max = args.use_global_max
+        self._local_maxima = dict()
         
         for field in args.metrics.keys():
-            Metrics._globmax[field] = max(Metrics._globmax[field], self[field].max())
+            local_max = self[field].max()
+            self._local_maxima[field] = local_max
+            Metrics._globmax[field] = max(Metrics._globmax[field], local_max)
         
     def __getitem__(self, field):
         
@@ -262,7 +277,16 @@ class Metrics:
     @property
     def fields(self):
         
-        return list(self.metrics.keys())
+        return list(self._metrics.keys())
+        
+    @property
+    def local_maxima(self):
+        
+        return self._local_maxima
+        
+    def local_max(self, field):
+        
+        return self._local_maxima[field]
         
     def locate(self, field, fac):
         """ Returns position where `field` drops to or reaches `fac * max(field)`. """
@@ -297,35 +321,100 @@ class Metrics:
                 
         return locs
 
+    def plot(self, fields=(), outdir="", bounds=(1e-8, 1)):
+
+        for field in fields:
+            if self._use_global_max:
+                maxval = self._globmax[field]
+            else:
+                maxval = self[field].max()
+            yvals = self[field] / maxval
+            yvals += (self[field] == 0.0)*1e-10
+            plt.plot(self.pos, self[field] / maxval)
+            plt.yscale("log")
+            plt.xlabel("r [cm]")
+            plt.ylabel("{}/max[{}]".format(field, field))
+            plt.ylim(bounds)
+            plt.savefig(os.path.join(outdir, f"{field}_profile_{float(self.time):.3e}.png"))
+            plt.gcf().clear()
+
 #########################################
 # Compute positions and write data file #
 #########################################
+
+def argsort(seq, key=lambda x: x):
+    """ Return sorted index space of the input sequence. """
+    
+    seq = list(seq)
+    ind = list(range(len(seq)))
+    return sorted(ind, key=lambda i: key(seq[i]))
 
 # Turn the time series into a queue and pop the datasets off one-by-one - this prevents it from
 # storing all of the needed fields from all of the datasets at once
 args.ts = deque(args.ts)
 times = []
-loclist = []
+metrics = []
 
 while args.ts:
     
     ds = args.ts.popleft()
     times.append(ds.current_time)
-    loclist.append(Metrics(ds, args))
+    metrics.append(Metrics(ds, args))
     del ds
+
+# Make plots if asked to do so
+if args.plot:
+    if args.plot_directory is None:
+        args.plot_directory = os.getcwd()
+    if not os.path.exists(args.plot_directory):
+        os.makedirs(args.plot_directory)
+    for m in metrics:
+        m.plot(args.plot, outdir=args.plot_directory)
 
 # We need the global max to have been computed already to properly track the contour
 # The Metrics objects all need to have been initialized before obtaining the position values
-loclist = [m.getall() for m in loclist]
-cols = sorted(loclist[0].keys())
+loclist = [m.getall() for m in metrics]
+
+if args.units:
+    items = sorted(loclist[0].items())
+    ind = argsort(items, key=lambda item: item[0])
+    cols = [items[i][0] for i in ind]
+    units = [items[i][1].units for i in ind]
+else:
+    cols = sorted(loclist[0].keys())
 
 with open(args.out, 'w') as file:
     
     print("time", *cols, file=file)
+    if args.units:
+        print(f"{times[0].units}", *units, file=file)
     
     for time, locs in zip(times, loclist):
         
         row = (locs[col].value for col in cols)
         print(time.value, *row, file=file)
         
+if args.write_local_maxima_to is not None:
+    
+    maxlist = [m.local_maxima for m in metrics]
+    
+    if args.units:
+        items = sorted(maxlist[0].items())
+        ind = argsort(items, key=lambda item: item[0])
+        cols = [items[i][0] for i in ind]
+        units = [items[i][1].units for i in ind]
+    else:
+        cols = sorted(maxlist[0].keys())
+    
+    with open(args.write_local_maxima_to, 'w') as file:
+        
+        print("time", *cols, file=file)
+        if args.units:
+            print(f"{times[0].units}", *units, file=file)
+        
+        for time, vals in zip(times, maxlist):
+            
+            row = (vals[field].value for field in cols)
+            print(time.value, *row, file=file)
+
 print("Task completed.")
