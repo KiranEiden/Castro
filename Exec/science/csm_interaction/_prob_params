@@ -1,0 +1,123 @@
+# name			data type			default		namelist param?			size
+
+
+
+
+
+## EJECTA PARAMETERS ##
+
+# ejecta mass (Msol)
+m_0		real		1.0e0_rt		y
+r_0		real		1.0e14_rt		y
+kap		real		1.0e0_rt		y
+#t_0		real		8.64e4_rt		y
+
+
+tau		real		1.0e3_rt		y
+
+
+#stellar radius, important for
+# determining initial temperature
+# because of adiabatic losses via
+# expansion out to Rcsm
+# make this really small if you want cold ejecta
+# since E_gas is set to be E_kin/2
+r_star	real		1.e12_rt		y
+# characteristic ejecta velocity beta=v/c
+beta	real		3.333e-2_rt		y
+
+# inner (n) and outer (d) broken power-law indices
+pl_ej	real	    1.0e0_rt		y   #whether or not to use broken plaw, default yes
+n		real		1.0e1_rt		y
+d		real		0.0e0_rt		y
+f_r		real		3.3333e-1_rt		y  #transition velocity coordinate
+
+T_ej  real  1.0e3_rt  y
+
+
+## CSM PARAMETERS ##
+
+# CSM mass eta=Mcsm/Mej
+eta		real		1.0e-2_rt		y
+# inner CSM radius (cm)
+#r_0		real		1.0e14_rt		y
+
+# CSM width delt = dR/r_0
+delt	real		1.0e0_rt		y
+
+# CSM density power-law (e.g. s=2 is a wind)
+s		real		0.0e0_rt		y
+
+# breakout layer plaw index (make it steep)
+p		real		5.e1_rt			y
+
+# extent of breakout layer as fraction of R+dR
+xi_bo	real		0.4e0_rt			y
+
+# "smoothing length" for transition to ambient/wind (units of r_0)
+h_csm	real		1.e-1_rt		y
+
+# initial CSM temperature (K)
+T_csm	real		1.e2_rt			y
+
+# CSM velocity in km/s (default to stationary)
+v_csm	real		0.0_rt			y
+
+
+## WIND/AMBIENT PARAMETERS ##
+
+# mass-loss rate is Msol/yr
+Mdot	real		1.e-4_rt		y
+
+# wind velocity (km/s)
+v_w		real		5.e1_rt			y
+
+#outer wind radius (cm)
+# -1 = no wind, use ambient floor
+#  0 = extend to edge of domain
+# >0 = wind width from R_bo to dR_w
+R_w	real		-1.e0_rt		y
+
+#wind/ambient temperature (K)
+T_0		real		1.e2_rt			y
+
+# ambient optical depth
+tau_a	real		1.e-2_rt		y
+
+# ratio of maximum possible ambient to csm density
+# this is only set if the optical depth param tau_a
+# gives an ambient density too large that
+# it starts affecting the late-time light curve
+# from continued interaction
+f_a		real		1.e-8_rt		y
+
+
+# opacity (in cm^2/g)
+kap		real		0.4e0_rt		y
+
+# whether or not to include recombination effects (default no, so constant grey opacity)
+#use_Trec	real	-1.e0_rt		y
+
+# recombination temperature (K) only used if T_rec>0
+#T_rec		real	0.0e0_rt		y
+
+# smooth the opacity drop over a temperature range (K)
+#dT_rec		real	6.0e2_rt		y
+
+# thermalization factor (i.e. kappa_P/kappa_R)
+eps			real	1.e0_rt		y
+
+
+
+## OTHER PARAMETERS ##
+
+### AMR stuff ##
+
+max_shock_tagging_level	integer	0	y
+
+
+#density filter to smooth out numerical noise
+filter_rhomax	real	1.e-99_rt	y
+
+# when to use the filter
+filter_timemax	real	0.e0_rt		y
