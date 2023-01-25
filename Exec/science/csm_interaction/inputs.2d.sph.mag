@@ -1,21 +1,23 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
-max_step = 200000
-stop_time = 1.5e5
+max_step = 999999
+stop_time = 1e2
+
+# castro.max_dt = 1e-2
 
 # PROBLEM SIZE & GEOMETRY
-geometry.is_periodic =  0
-geometry.coord_sys   =  2       # spherical coordinates
-geometry.prob_lo     =  0.0
-geometry.prob_hi     =  3.0e13
-amr.n_cell           = 8192
+geometry.is_periodic =  0  0
+geometry.coord_sys   =  1       # cylindrical coordinates
+geometry.prob_lo     =  0.0  0.0
+geometry.prob_hi     =  3e13 3e13
+amr.n_cell           =  512  512
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # 0 = Interior           3 = Symmetry
 # 1 = Inflow             4 = SlipWall
 # 2 = Outflow            5 = NoSlipWall
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
-castro.lo_bc       =  3
-castro.hi_bc       =  2
+castro.lo_bc       =  3  3
+castro.hi_bc       =  2  2
 
 # WHICH PHYSICS
 castro.do_hydro = 1
@@ -31,12 +33,12 @@ castro.sponge_timescale = 1.0
 castro.sponge_upper_density = 1.e-17
 castro.sponge_lower_density = 1.e-30
 
-
 # TIME STEP CONTROL
-castro.cfl            = 0.2     # cfl number for hyperbolic system
+castro.cfl            = 0.5     # cfl number for hyperbolic system
 castro.init_shrink    = 0.01    # scale back initial timestep
 castro.change_max     = 1.1     # maximum increase in dt over successive steps
-castro.max_subcycles  = 100
+castro.max_subcycles  = 128
+
 # DIAGNOSTICS & VERBOSITY
 castro.sum_interval   = 1       # timesteps between computing mass
 castro.v              = 1       # verbosity in Castro.cpp
@@ -61,13 +63,13 @@ amr.check_int = 1000    # number of timesteps between checkpoints
 amr.plot_int = 100
 amr.derive_plot_vars=ALL
 
-eos.eos_gamma = 1.66666666667e0
+eos.eos_gamma = 1.3333333333e0
 
 # PROBLEM PARAMETERS
 problem.m_0 = 1.0
-problem.r_0 = 1.0e13
-problem.delt = 5.0
-problem.beta = 6.0e-2
+problem.r_0 = 1e13
+problem.delt = 1.0
+problem.beta = 3.0e-2
 problem.kap = 0.4
 problem.T_ej = 1e3
 problem.f_r = 1.0
@@ -76,7 +78,30 @@ problem.xi_bo = 0.1
 problem.eta = 10.0 
 problem.eps = 1.0e-2
 problem.p = 30.0
-problem.f_a = 1.0e-4
+problem.f_a = 1.0e-10
 problem.s = 2
+
+# MAGNETAR PARAMETERS
+castro.add_ext_src = 1
+# Approximate magnetar turn-on time (in s)
+problem.t_mag_act = 100.0
+# Fraction of of initial ejecta radius to use when defining deposition region
+problem.f_dep = 0.05
+# Initial magnetar period (in ms)
+problem.P_0 = 1.0
+# Magnetar radius (in units of 10^6 cm; used in energy/luminosity calculations)
+problem.R_mag = 1.0
+# Sine of the inclination angle between the magnetic and rotational axes
+problem.sin_alph = 0.5
+# Magnetic field (in units of 10^{15} G)
+problem.B_mag = 1.0
+# Magnetar moment of inertia (in units of 10^45 g cm^2)
+problem.I_mag = 1.0
+
+castro.do_grav = 0
+gravity.gravity_type = MonopoleGrav
+castro.use_point_mass = 1
+castro.point_mass = 3e33
+castro.point_mass_fix_solution = 1
 
 DistributionMapping.strategy = SFC

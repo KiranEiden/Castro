@@ -1,12 +1,12 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
-max_step = 200000
+max_step = 20000
 stop_time = 1.5e5
 
 # PROBLEM SIZE & GEOMETRY
 geometry.is_periodic =  0
 geometry.coord_sys   =  2       # spherical coordinates
 geometry.prob_lo     =  0.0
-geometry.prob_hi     =  3.0e13
+geometry.prob_hi     =  5.0e14
 amr.n_cell           = 8192
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
@@ -60,12 +60,38 @@ amr.check_int = 1000    # number of timesteps between checkpoints
 # PLOTFILES
 amr.plot_int = 100
 amr.derive_plot_vars=ALL
-
 eos.eos_gamma = 1.66666666667e0
+radiation.SolverType = 5
+castro.do_radiation = 1
+radiation.plot_lambda = 1
+radiation.plot_com_flux = 1
+radiation.plot_lab_flux = 1
+radiation.limiter = 2
+radiation.update_rosseland = 1
+radiation.lo_bc = 102
+radiation.hi_bc = 105
+radiation.update_planck = 1
+radiation.comoving = 1
+radiation.delta_temp = 10.0
+radiation.reltol = 1.e-14
+radsolve.reltol = 1.e-11
+radsolve.maxiter = 1000
+radiation.maxiter = 1000
+radiation.closure = 3
+radsolve.level_solver_flag = 0
+radiation.update_limiter = -1
+radiation.filter_lambda_T = 4
+radiation.filter_lambda_S = 0
+radiation.filter_prim_int = 1
+radiation.filter_prim_T = 4
+radiation.filter_prim_S = 3
+
+radiation.filter_rhomax =  -1.0e-17
+radiation.filter_timemax = -1.0
 
 # PROBLEM PARAMETERS
 problem.m_0 = 1.0
-problem.r_0 = 1.0e13
+problem.r_0 = 1e13
 problem.delt = 5.0
 problem.beta = 6.0e-2
 problem.kap = 0.4
@@ -76,7 +102,7 @@ problem.xi_bo = 0.1
 problem.eta = 10.0 
 problem.eps = 1.0e-2
 problem.p = 30.0
-problem.f_a = 1.0e-4
+problem.f_a = 1.0e-10
 problem.s = 2
 
 DistributionMapping.strategy = SFC
