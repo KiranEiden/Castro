@@ -107,7 +107,28 @@ kap		real		0.4e0_rt		y
 # thermalization factor (i.e. kappa_P/kappa_R)
 eps			real	1.e0_rt		y
 
+## MAGNETAR PARAMETERS ##
 
+# Magnetar turn-on time (in s)
+t_mag_act    real    100.0    y
+
+# Fraction of of initial ejecta radius to use when defining deposition region
+f_dep    real    0.02    y
+
+# Initial magnetar period (in ms)
+P_0    real    1.0    y
+
+# Magnetar radius (in units of 10^6 cm; used in energy/luminosity calculations)
+R_mag    real    1.0   y
+
+# Sine of the inclination angle between the magnetic and rotational axes
+sin_alph    real    0.5    y
+
+# Magnetic field (in units of 10^{15} G)
+B_mag    real    1.0    y
+
+# Magnetar moment of inertia (in units of 10^45 g cm^2)
+I_mag    real    1.0   y
 
 ## OTHER PARAMETERS ##
 

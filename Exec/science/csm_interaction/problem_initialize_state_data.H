@@ -14,8 +14,6 @@ void problem_initialize_state_data (int i, int j, int k,
   const Real* problo = geomdata.ProbLo();
   const Real* probhi = geomdata.ProbHi();
 
-
-
   constexpr Real Msun = 1.989e33_rt;
   constexpr Real clight = 2.998e10_rt;
   constexpr Real km_to_cm = 1.e5_rt;
@@ -60,8 +58,7 @@ void problem_initialize_state_data (int i, int j, int k,
   z = problo[2] + dx[2] * (static_cast<Real>(k) + 0.5_rt) - problem::center[2];
 #endif
 
-  Real r = std::sqrt(x*x + y*y* + z*z);
-
+  Real r = std::sqrt(x*x + y*y + z*z);
 
   Real rho = 0.0_rt;
   Real T = 0.0_rt;
@@ -69,17 +66,22 @@ void problem_initialize_state_data (int i, int j, int k,
 
   Real rho0_ej;
   if(problem::pl_ej > 0)
-      rho0_ej = (n-3.0_rt)*(3.0_rt-d)/(4.0_rt*M_PI*(n-d))*M_ej/pow(R_t,3);
-  else rho0_ej = 3.0_rt/(4.0_rt*M_PI)*M_ej/pow(R_csm,3);
+  {
+      Real c_rho = 1.0_rt / (3.0_rt - d) + (1.0_rt - pow(problem::f_r, n-3)) / (n - 3.0_rt);
+      rho0_ej = M_ej / (4.0_rt*M_PI*pow(R_t,3)) / c_rho;
+  }
+  else
+  {
+      rho0_ej = 3.0_rt/(4.0_rt*M_PI)*M_ej/pow(R_csm,3);
+  }
 
   Real rho0_csm = (3.0_rt - s)/(4.0_rt*M_PI)
            /(pow(1.0_rt + delt,3-s)-1.0_rt)
            * M_csm/pow(R_csm,3);
   Real rho0_bo = rho0_csm*pow(R_out/R_csm,-s);
 
-
   // ejecta portion
-  if ( r < R_csm)
+  if (r < R_csm)
   {
     rho = rho0_ej;
 
@@ -95,24 +97,24 @@ void problem_initialize_state_data (int i, int j, int k,
   }
   else // CSM/ambient portion
   {
-    if(r < R_out){
-	   	rho = rho0_csm*pow(r/R_csm,-s);
-		state(i,j,k,UFX) = rho;
-	}
-	else{
-	   	rho = rho0_csm*pow(1.+delt,-s)*pow(r/R_out,-problem::p);
-		state(i,j,k,UFX) = 0.0;
-	}
-    //else rho = rho0_csm*pow(1.0_rt+problem::delt,-s)*exp(-0.5e0_rt*pow(r-R_out,2)/pow(xi*problem::delt*R_csm,2));
-
-	rho = max(rho,1.01*small_dens);
+    rho = rho_a;
+    // if(r < R_out){
+	//    	rho = rho0_csm*pow(r/R_csm,-s);
+	// 	state(i,j,k,UFX) = rho;
+	// }
+	// else{
+	//    	rho = rho0_csm*pow(1.+delt,-s)*pow(r/R_out,-problem::p);
+	// 	state(i,j,k,UFX) = 0.0;
+	// }
+    // //else rho = rho0_csm*pow(1.0_rt+problem::delt,-s)*exp(-0.5e0_rt*pow(r-R_out,2)/pow(xi*problem::delt*R_csm,2));
+    // 
+	// rho = max(rho,1.01*small_dens);
     T = problem::T_0;
     v = problem::v_csm*km_to_cm;
   }
 
   state(i,j,k,URHO) = rho;
   state(i,j,k,UTEMP) = T;
-
 
   // need to convert into 3d vector
   Real v_x = 0.0_rt;
