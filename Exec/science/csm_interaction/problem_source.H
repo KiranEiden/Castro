@@ -94,9 +94,9 @@ void problem_source (int i, int j, int k,
 	// amrex::Abort('Magnetar source term not implemented for multi-D.');
 // #endif
 
-	// // Estimate drhoe_dt, where energy is deposited uniformly over the volume
-	const Real V_dep = 4.1887902047863905_rt * r_dep*r_dep*r_dep;
-	const Real drhoe_dt = L_tot / V_dep * frac_lum;
+    // // Estimate drhoe_dt, where energy is deposited uniformly over the volume
+    const Real V_dep = 4.1887902047863905_rt * r_dep*r_dep*r_dep;
+    const Real drhoe_dt = L_tot / V_dep * frac_lum;
     
     // // Estimate drhoe_dt with parabolic energy deposition dropoff
     // const Real V_cell = 12.5663706143592_rt*r*r*dr + 1.04719755119660_rt*dr*dr*dr;
