@@ -107,6 +107,7 @@ void problem_source (int i, int j, int k,
     // const Real drhoe_dt = frac_abs * L_tot / V_cell;
     
     src(i,j,k,UEINT) += drhoe_dt;
+    src(i,j,k,UEDEN) += drhoe_dt;
 }
 
 #endif
