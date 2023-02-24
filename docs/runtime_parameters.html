@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>namespace: castro &mdash; Castro  documentation</title>
@@ -17,6 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script>window.MathJax = {"tex": {"macros": {"kth": "{{k_\\mathrm{th}}}", "gcc": "{\\mathrm{g~cm^{-3}}}", "cms": "{\\mathrm{cm~s^{-1}}}", "presunit": "{\\mathrm{dyn~cm^{-2}}}", "accelunit": "{\\mathrm{cm~s^{-2}}}", "ergg": "{\\mathrm{erg~g^{-1}}}", "Ab": "{{\\bf A}}", "eb": "{{\\bf e}}", "Fb": "{{\\bf F}}", "gb": "{{\\bf g}}", "Hb": "{{\\bf H}}", "ib": "{{\\bf i}}", "Ib": "{{\\bf I}}", "Kb": "{{\\bf K}}", "lb": "{{\\bf l}}", "Lb": "{{\\bf L}}", "nb": "{{\\bf n}}", "Pb": "{{\\bf P}}", "Qb": "{{\\bf Q}}", "rb": "{{\\bf r}}", "Rb": "{{\\bf R}}", "Sb": "{{\\bf S}}", "ub": "{{\\bf u}}", "Ub": "{{\\bf U}}", "xb": "{{\\bf x}}", "dt": "{\\Delta t}", "omegadot": "{\\dot\\omega}", "inp": "{{\\rm in}}", "outp": "{{\\rm out}}", "sync": "{{\\rm sync}}", "half": "{\\frac{1}{2}}", "myhalf": "{\\half}", "nph": "{{n+\\myhalf}}", "kpp": "{\\ensuremath{\\kappa_{\\mathrm{P}}}}", "kpr": "{\\ensuremath{\\kappa_{\\mathrm{R}}}}", "kpf": "{\\ensuremath{\\kappa_{\\mathrm{F}}}}", "vb": "{\\boldsymbol{v}}", "vbt": "{\\widetilde{\\vb}}", "rbt": "{\\widetilde{\\rb}}", "ob": "{\\boldsymbol{\\omega}}", "nablab": "{\\boldsymbol{\\nabla}}", "avg": ["{{\\left \\langle #1 \\right \\rangle}}", 1]}}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
@@ -32,12 +33,16 @@
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
 
-            <a href="index.html" class="icon icon-home"> Castro
-            <img src="_static/castro_logo_hot_200.png" class="logo" alt="Logo"/>
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Castro
+              <img src="_static/castro_logo_hot_200.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -122,9 +127,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="rp_intro.html">Runtime Parameters</a> &raquo;</li>
-      <li>namespace: <code class="docutils literal notranslate"><span class="pre">castro</span></code></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="rp_intro.html">Runtime Parameters</a></li>
+      <li class="breadcrumb-item active">namespace: <code class="docutils literal notranslate"><span class="pre">castro</span></code></li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/runtime_parameters.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -138,11 +143,6 @@
 <h1>namespace: <code class="docutils literal notranslate"><span class="pre">castro</span></code><a class="headerlink" href="#namespace-castro" title="Permalink to this heading">¶</a></h1>
 <p><strong>AMR</strong></p>
 <table class="docutils align-default" id="index-0">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -157,7 +157,8 @@
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lin_limit_state_interp</span></code></p></td>
 <td><p>how to do limiting of the state data when interpolating 0:
 only prevent new extrema 1: preserve linear combinations of
-state variables</p></td>
+state variables 2: preserve linear combinations and prevent
+new extrema</p></td>
 <td><p>0</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">state_nghost</span></code></p></td>
@@ -176,15 +177,16 @@ Note: this only works for the CTU and simple-SDC
 time_integration_method drivers</p></td>
 <td><p>1</p></td>
 </tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">allow_non_unit_aspect_zones</span></code></p></td>
+<td><p>Castro was originally written assuming dx = dy = dz.  This
+assumption is enforced at runtime.  Setting
+allow_non_unit_aspect_zones = 1 opts out.</p></td>
+<td><p>0</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>hydrodynamics</strong></p>
 <table class="docutils align-default" id="index-1">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -582,11 +584,6 @@ first timestep will be very slow when using this option.</p></td>
 </table>
 <p><strong>timestep control</strong></p>
 <table class="docutils align-default" id="index-2">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -705,11 +702,6 @@ simulation.</p></td>
 </table>
 <p><strong>reactions</strong></p>
 <table class="docutils align-default" id="index-3">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -790,11 +782,6 @@ drive_initial_convection</p></td>
 </table>
 <p><strong>diffusion</strong></p>
 <table class="docutils align-default" id="index-4">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -825,11 +812,6 @@ cutoff density. This should be the larger of the two</p></td>
 </table>
 <p><strong>gravity and rotation</strong></p>
 <table class="docutils align-default" id="index-5">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -920,11 +902,6 @@ gravity.</p></td>
 </table>
 <p><strong>sponge</strong></p>
 <table class="docutils align-default" id="index-6">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -986,11 +963,6 @@ fully applied</p></td>
 </table>
 <p><strong>parallelization</strong></p>
 <table class="docutils align-default" id="index-7">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1010,11 +982,6 @@ fully applied</p></td>
 </table>
 <p><strong>embiggening</strong></p>
 <table class="docutils align-default" id="index-8">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1036,11 +1003,6 @@ extend the domain</p></td>
 </table>
 <p><strong>self-consistent field initialization</strong></p>
 <table class="docutils align-default" id="index-9">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1076,11 +1038,6 @@ extend the domain</p></td>
 </table>
 <p><strong>refinement</strong></p>
 <table class="docutils align-default" id="index-10">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1106,11 +1063,6 @@ no restriction.</p></td>
 </table>
 <p><strong>diagnostics, I/O</strong></p>
 <table class="docutils align-default" id="index-11">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1196,11 +1148,6 @@ parameters are managed by the python scripts.</p></td>
 </table>
 <p><strong>radiation-hydro</strong></p>
 <table class="docutils align-default" id="index-12">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1216,11 +1163,6 @@ parameters are managed by the python scripts.</p></td>
 </table>
 <p><strong>particles</strong></p>
 <table class="docutils align-default" id="index-13">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1238,11 +1180,6 @@ parameters are managed by the python scripts.</p></td>
 <section id="namespace-diffusion">
 <h1>namespace: <code class="docutils literal notranslate"><span class="pre">diffusion</span></code><a class="headerlink" href="#namespace-diffusion" title="Permalink to this heading">¶</a></h1>
 <table class="docutils align-default" id="index-14">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1265,11 +1202,6 @@ number means more output)</p></td>
 <section id="namespace-gravity">
 <h1>namespace: <code class="docutils literal notranslate"><span class="pre">gravity</span></code><a class="headerlink" href="#namespace-gravity" title="Permalink to this heading">¶</a></h1>
 <table class="docutils align-default" id="index-15">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1356,11 +1288,6 @@ potential, rather than constructing it directly?</p></td>
 <section id="namespace-particles">
 <h1>namespace: <code class="docutils literal notranslate"><span class="pre">particles</span></code><a class="headerlink" href="#namespace-particles" title="Permalink to this heading">¶</a></h1>
 <table class="docutils align-default" id="index-16">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1411,11 +1338,6 @@ particles are stored in output files</p></td>
 <section id="namespace-radiation">
 <h1>namespace: <code class="docutils literal notranslate"><span class="pre">radiation</span></code><a class="headerlink" href="#namespace-radiation" title="Permalink to this heading">¶</a></h1>
 <table class="docutils align-default" id="index-17">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>
@@ -1456,11 +1378,6 @@ Bruenn 22: square root 32: Minerbo</p></td>
 <section id="namespace-radsolve">
 <h1>namespace: <code class="docutils literal notranslate"><span class="pre">radsolve</span></code><a class="headerlink" href="#namespace-radsolve" title="Permalink to this heading">¶</a></h1>
 <table class="docutils align-default" id="index-18">
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 51%" />
-<col style="width: 13%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>parameter</p></th>
 <th class="head"><p>description</p></th>

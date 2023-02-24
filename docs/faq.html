@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Frequently Asked Questions &mdash; Castro  documentation</title>
@@ -17,6 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -30,12 +31,16 @@
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
 
-            <a href="index.html" class="icon icon-home"> Castro
-            <img src="_static/castro_logo_hot_200.png" class="logo" alt="Logo"/>
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Castro
+              <img src="_static/castro_logo_hot_200.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -116,8 +121,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Frequently Asked Questions</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Frequently Asked Questions</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/faq.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -198,8 +203,8 @@ example. You know the line <code class="docutils literal notranslate"><span clas
 causing a segfault. You could add a print statement before that.
 But it might print out thousands (or even millions) of line before
 it hits the segfault. Instead, you could</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">ostringstream</span><span class="w"> </span><span class="n">ss</span><span class="p">;</span><span class="w"></span>
-<span class="n">ss</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;state.box() = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">box</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; cell = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">cell</span><span class="p">;</span><span class="w"></span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">ostringstream</span><span class="w"> </span><span class="n">ss</span><span class="p">;</span>
+<span class="n">ss</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;state.box() = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">box</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; cell = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">cell</span><span class="p">;</span>
 <span class="n">BL_BACKTRACE_PUSH</span><span class="p">(</span><span class="n">ss</span><span class="p">.</span><span class="n">str</span><span class="p">());</span><span class="w"> </span><span class="c1">// PUSH takes std::string</span>
 
 <span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">state</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span><span class="w">  </span><span class="c1">// state is a Fab, and cell is an IntVect.</span>
@@ -302,6 +307,17 @@ and crashes.</em></p>
 there are density resets, try running with
 <code class="docutils literal notranslate"><span class="pre">castro.limit_fluxes_on_small_dens</span> <span class="pre">=</span> <span class="pre">1</span></code>.  This will use a flux
 limiter to prevent the density from going negative.</p>
+</li>
+<li><p><em>There might be a problem when Castro tries to normalize mass fractions
+and encounters: ``Invalid mass fraction in Castro::normalize_species()``.</em></p>
+<p>If the error happens at the beginning of the timestep, it is possible that
+something unexpected happened durng the interpolation from the coarse-level
+to the fine-level. Try to set <code class="docutils literal notranslate"><span class="pre">castro.state_interp_order</span> <span class="pre">=</span> <span class="pre">0</span></code> in the
+input file. This allows piecewise constant refinement, but sacrifices
+some benefit of the refinement.</p>
+<p>If the error continues, try to increase the tolerance of determining
+specie abundance validity check by setting <code class="docutils literal notranslate"><span class="pre">castro.abundance_failure_tolerance</span></code>
+to a higher value.</p>
 </li>
 </ol>
 </section>

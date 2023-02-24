@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>File Castro_bc_fill_nd.H &mdash; Castro  documentation</title>
@@ -17,6 +17,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -30,12 +31,16 @@
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
 
-            <a href="../index.html" class="icon icon-home"> Castro
-            <img src="../_static/castro_logo_hot_200.png" class="logo" alt="Logo"/>
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Castro
+              <img src="../_static/castro_logo_hot_200.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -128,6 +133,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Rotation_8H.html">File Rotation.H</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advection__util_8H.html">File advection_util.H</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ambient_8H.html">File ambient.H</a></li>
+<li class="toctree-l2"><a class="reference internal" href="binary_8H.html">File binary.H</a></li>
 <li class="toctree-l2"><a class="reference internal" href="blackbody_8H.html">File blackbody.H</a></li>
 <li class="toctree-l2"><a class="reference internal" href="castro__limits_8H.html">File castro_limits.H</a></li>
 <li class="toctree-l2"><a class="reference internal" href="diffusion__util_8H.html">File diffusion_util.H</a></li>
@@ -184,9 +190,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../filelist.html">File list</a> &raquo;</li>
-      <li>File Castro_bc_fill_nd.H</li>
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../filelist.html">File list</a></li>
+      <li class="breadcrumb-item active">File Castro_bc_fill_nd.H</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/file/Castro__bc__fill__nd_8H.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -215,7 +221,7 @@
 <span id="_CPPv312ambient_fillRKN5amrex3BoxERKN5amrex6Array4IN5amrex4RealEEERKN5amrex8GeometryERKN5amrex6VectorIN5amrex5BCRecEEE"></span><span id="_CPPv212ambient_fillRKN5amrex3BoxERKN5amrex6Array4IN5amrex4RealEEERKN5amrex8GeometryERKN5amrex6VectorIN5amrex5BCRecEEE"></span><span id="ambient_fill__amrex::BoxCR.amrex::Array4:amrex::Real:CR.amrex::GeometryCR.amrex::Vector:amrex::BCRec:CR"></span><span class="target" id="Castro__bc__fill__nd_8H_1ae4ae3656eadcb3a5fdf15f6f84a17648"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ambient_fill</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Box</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bx</span></span>, <a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Array4</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Real</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">state</span></span>, <a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Geometry</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">BCRec</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bcr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv412ambient_fillRKN5amrex3BoxERKN5amrex6Array4IN5amrex4RealEEERKN5amrex8GeometryERKN5amrex6VectorIN5amrex5BCRecEEE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Fill the boundaries with the ambient state</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bx</strong> – box </p></li>
 <li><p><strong>state</strong> – state </p></li>
@@ -231,7 +237,7 @@
 <span id="_CPPv315ambient_denfillRKN5amrex3BoxERKN5amrex6Array4IN5amrex4RealEEERKN5amrex8GeometryERKN5amrex6VectorIN5amrex5BCRecEEE"></span><span id="_CPPv215ambient_denfillRKN5amrex3BoxERKN5amrex6Array4IN5amrex4RealEEERKN5amrex8GeometryERKN5amrex6VectorIN5amrex5BCRecEEE"></span><span id="ambient_denfill__amrex::BoxCR.amrex::Array4:amrex::Real:CR.amrex::GeometryCR.amrex::Vector:amrex::BCRec:CR"></span><span class="target" id="Castro__bc__fill__nd_8H_1a91ffa78a6a27d06c0528910824b75165"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ambient_denfill</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Box</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bx</span></span>, <a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Array4</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Real</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">state</span></span>, <a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Geometry</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="Castro__util_8H.html#_CPPv45amrex" title="amrex"><span class="n"><span class="pre">amrex</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">BCRec</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bcr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv415ambient_denfillRKN5amrex3BoxERKN5amrex6Array4IN5amrex4RealEEERKN5amrex8GeometryERKN5amrex6VectorIN5amrex5BCRecEEE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Fill the boundaries with the ambient state (density only)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bx</strong> – box </p></li>
 <li><p><strong>state</strong> – state </p></li>

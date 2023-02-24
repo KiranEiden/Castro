@@ -3,7 +3,7 @@ namespace: ``castro``
 
 **AMR**
 
-.. index:: castro.state_interp_order, castro.lin_limit_state_interp, castro.state_nghost, castro.do_reflux, castro.update_sources_after_reflux
+.. index:: castro.state_interp_order, castro.lin_limit_state_interp, castro.state_nghost, castro.do_reflux, castro.update_sources_after_reflux, castro.allow_non_unit_aspect_zones
 
 
 +--------------------------------------------+-------------------------------------------------------------+---------------+
@@ -13,7 +13,8 @@ namespace: ``castro``
 +--------------------------------------------+-------------------------------------------------------------+---------------+
 | ``lin_limit_state_interp``                 | how to do limiting of the state data when interpolating 0:  | 0             |
 |                                            | only prevent new extrema 1: preserve linear combinations of |               |
-|                                            | state variables                                             |               |
+|                                            | state variables 2: preserve linear combinations and prevent |               |
+|                                            | new extrema                                                 |               |
 +--------------------------------------------+-------------------------------------------------------------+---------------+
 | ``state_nghost``                           | Number of ghost zones for state data to have. Note that if  | 0             |
 |                                            | you are using radiation, choosing this to be zero will be   |               |
@@ -24,6 +25,10 @@ namespace: ``castro``
 | ``update_sources_after_reflux``            | whether to re-compute new-time source terms after a reflux  | 1             |
 |                                            | Note: this only works for the CTU and simple-SDC            |               |
 |                                            | time_integration_method drivers                             |               |
++--------------------------------------------+-------------------------------------------------------------+---------------+
+| ``allow_non_unit_aspect_zones``            | Castro was originally written assuming dx = dy = dz.  This  | 0             |
+|                                            | assumption is enforced at runtime.  Setting                 |               |
+|                                            | allow_non_unit_aspect_zones = 1 opts out.                   |               |
 +--------------------------------------------+-------------------------------------------------------------+---------------+
 
 
