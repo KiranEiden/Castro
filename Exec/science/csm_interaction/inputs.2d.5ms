@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
-max_step = 2000
-stop_time = 500
+max_step = 99999
+stop_time = 100
 
 # castro.max_dt = 1e-2
 
@@ -8,7 +8,7 @@ stop_time = 500
 geometry.is_periodic =  0  0
 geometry.coord_sys   =  1       # cylindrical coordinates
 geometry.prob_lo     =  0.0  0.0
-geometry.prob_hi     =  2.5e12 2.5e12
+geometry.prob_hi     =  2.5e14 2.5e14
 amr.n_cell           =  256  256
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
@@ -49,16 +49,30 @@ amr.v                 = 0       # verbosity in Amr.cpp
 amr.max_level       = 6       # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2 2 # refinement ratio
 amr.regrid_int      = 1       # how often to regrid
-amr.blocking_factor = 32      # block factor in grid generation
-amr.max_grid_size   = 32768
+amr.blocking_factor = 16       # block factor in grid generation
+amr.max_grid_size   = 128
 amr.derive_plot_vars = ALL
 
-amr.n_error_buf = 32
+amr.n_error_buf = 2
 problem.max_shock_tagging_level = 0
 
-amr.refinement_indicators = dens
+amr.refinement_indicators = dens press vel ej
+
 amr.refine.dens.field_name = density
 amr.refine.dens.relative_gradient = 2
+amr.refine.dens.start_time = 10
+
+amr.refine.press.field_name = pressure
+amr.refine.press.relative_gradient = 2
+amr.refine.press.start_time = 10
+
+amr.refine.vel.field_name = magvel
+amr.refine.vel.relative_gradient = 2
+amr.refine.vel.start_time = 10
+
+amr.refine.ej.field_name = density
+amr.refine.ej.value_greater = 1e-8
+amr.refine.ej.max_level = 2
 
 # CHECKPOINT FILES
 amr.check_int = 1000    # number of timesteps between checkpoints
@@ -71,7 +85,7 @@ eos.eos_gamma = 1.3333333333e0
 
 # PROBLEM PARAMETERS
 problem.m_0 = 1.0
-problem.r_0 = 1.75e11
+problem.r_0 = 1.54e13
 problem.delt = 1.0
 problem.beta = 3.0e-2
 problem.kap = 0.4
@@ -88,11 +102,11 @@ problem.s = 2
 # MAGNETAR PARAMETERS
 castro.add_ext_src = 1
 # Approximate magnetar turn-on time (in s)
-problem.t_mag_act = 100.0
+problem.t_mag_act = 2500.0
 # Fraction of of initial ejecta radius to use when defining deposition region
 problem.f_dep = 0.05
 # Initial magnetar period (in ms)
-problem.P_0 = 1.0
+problem.P_0 = 5.0
 # Magnetar radius (in units of 10^6 cm; used in energy/luminosity calculations)
 problem.R_mag = 1.0
 # Sine of the inclination angle between the magnetic and rotational axes

@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 10
+stop_time = 10000
 
 # castro.max_dt = 1e-2
 

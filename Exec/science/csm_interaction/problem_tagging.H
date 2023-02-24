@@ -16,15 +16,15 @@ AMREX_GPU_HOST_DEVICE AMREX_INLINE
 void problem_tagging(int i, int j, int k,
                      Array4<char> const& tag,
                      Array4<Real const> const& state,
-                     int level, const GeometryData& geomdata) {
-
-
-	if(state(i,j,k,UFX)/state(i,j,k,URHO) > 1.0e-6_rt)
-	{
-		if(level < problem::max_shock_tagging_level)
-			tag(i,j,k) = TagBox::SET;
-	}
-
+                     int level, const GeometryData& geomdata)
+{
+#if AMREX_SPACEDIM == 1
+    // Grad rho, velocity, temperature?
+#elif AMREX_SPACEDIM == 2
+    // ...
+#else
+    // ...
+#endif
 }
 
 #endif
