@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gravity &mdash; Castro  documentation</title>
@@ -15,7 +15,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script>window.MathJax = {"tex": {"macros": {"kth": "{{k_\\mathrm{th}}}", "gcc": "{\\mathrm{g~cm^{-3}}}", "cms": "{\\mathrm{cm~s^{-1}}}", "presunit": "{\\mathrm{dyn~cm^{-2}}}", "accelunit": "{\\mathrm{cm~s^{-2}}}", "ergg": "{\\mathrm{erg~g^{-1}}}", "Ab": "{{\\bf A}}", "eb": "{{\\bf e}}", "Fb": "{{\\bf F}}", "gb": "{{\\bf g}}", "Hb": "{{\\bf H}}", "ib": "{{\\bf i}}", "Ib": "{{\\bf I}}", "Kb": "{{\\bf K}}", "lb": "{{\\bf l}}", "Lb": "{{\\bf L}}", "nb": "{{\\bf n}}", "Pb": "{{\\bf P}}", "Qb": "{{\\bf Q}}", "rb": "{{\\bf r}}", "Rb": "{{\\bf R}}", "Sb": "{{\\bf S}}", "ub": "{{\\bf u}}", "Ub": "{{\\bf U}}", "xb": "{{\\bf x}}", "dt": "{\\Delta t}", "omegadot": "{\\dot\\omega}", "inp": "{{\\rm in}}", "outp": "{{\\rm out}}", "sync": "{{\\rm sync}}", "half": "{\\frac{1}{2}}", "myhalf": "{\\half}", "nph": "{{n+\\myhalf}}", "kpp": "{\\ensuremath{\\kappa_{\\mathrm{P}}}}", "kpr": "{\\ensuremath{\\kappa_{\\mathrm{R}}}}", "kpf": "{\\ensuremath{\\kappa_{\\mathrm{F}}}}", "vb": "{\\boldsymbol{v}}", "vbt": "{\\widetilde{\\vb}}", "rbt": "{\\widetilde{\\rb}}", "ob": "{\\boldsymbol{\\omega}}", "nablab": "{\\boldsymbol{\\nabla}}", "avg": ["{{\\left \\langle #1 \\right \\rangle}}", 1]}}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
@@ -31,12 +33,16 @@
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
 
-            <a href="index.html" class="icon icon-home"> Castro
-            <img src="_static/castro_logo_hot_200.png" class="logo" alt="Logo"/>
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Castro
+              <img src="_static/castro_logo_hot_200.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -69,6 +75,7 @@
 <li class="toctree-l1"><a class="reference internal" href="build_system.html">Build System Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Hydrodynamics.html">Hydrodynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hse.html">Hydrostatic Equilibrium</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mhd.html">MHD</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Gravity</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a><ul>
@@ -129,8 +136,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Gravity</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Gravity</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/gravity.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -141,11 +148,11 @@
            <div itemprop="articleBody">
              
   <section id="gravity">
-<span id="ch-gravity"></span><h1>Gravity<a class="headerlink" href="#gravity" title="Permalink to this headline">¶</a></h1>
+<span id="ch-gravity"></span><h1>Gravity<a class="headerlink" href="#gravity" title="Permalink to this heading">¶</a></h1>
 <section id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">¶</a></h2>
 <section id="gravity-types">
-<h3>Gravity Types<a class="headerlink" href="#gravity-types" title="Permalink to this headline">¶</a></h3>
+<h3>Gravity Types<a class="headerlink" href="#gravity-types" title="Permalink to this heading">¶</a></h3>
 <p>Castro can incorporate gravity as a constant, monopole approximation,
 or a full Poisson solve. To enable gravity in the code, set:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">USE_GRAV</span> <span class="o">=</span> <span class="n">TRUE</span>
@@ -173,7 +180,7 @@ setting it in the <code class="docutils literal notranslate"><span class="pre">p
 </div>
 </section>
 <section id="integration-strategy">
-<h3>Integration Strategy<a class="headerlink" href="#integration-strategy" title="Permalink to this headline">¶</a></h3>
+<h3>Integration Strategy<a class="headerlink" href="#integration-strategy" title="Permalink to this heading">¶</a></h3>
 <p>Castro uses subcycling to integrate levels at different timesteps.
 The gravity algorithm needs to respect this to obtain full accuracy.
 When self-gravity is computed via a multigrid solve
@@ -192,7 +199,7 @@ interfaces, the data from the coarse levels acts as Dirichlet
 boundary conditions for the current-level-solve.</p></li>
 </ul>
 <p>The overall integration strategy is as follows, and is similar to
-the discussion in <span id="id1">[<a class="reference internal" href="zreferences.html#id4" title="A. S. Almgren, V. E. Beckner, J. B. Bell, M. S. Day, L. H. Howell, C. C. Joggerst, M. J. Lijewski, A. Nonaka, M. Singer, and M. Zingale. CASTRO: A New Compressible Astrophysical Solver. I. Hydrodynamics and Self-gravity. ApJ, 715:1221-1238, June 2010. doi:10.1088/0004-637X/715/2/1221.">13</a>]</span>. Briefly:</p>
+the discussion in <span id="id1">[<a class="reference internal" href="zreferences.html#id4" title="A. S. Almgren, V. E. Beckner, J. B. Bell, M. S. Day, L. H. Howell, C. C. Joggerst, M. J. Lijewski, A. Nonaka, M. Singer, and M. Zingale. CASTRO: A New Compressible Astrophysical Solver. I. Hydrodynamics and Self-gravity. ApJ, 715:1221-1238, June 2010. doi:10.1088/0004-637X/715/2/1221.">17</a>]</span>. Briefly:</p>
 <ul>
 <li><p>At the beginning of a simulation, we do a multilevel composite
 solve (if <code class="docutils literal notranslate"><span class="pre">gravity.no_composite</span></code> = 0).</p>
@@ -230,7 +237,7 @@ the fine level(s) cover essentially all of the mass on the grid for
 all time.</p>
 </section>
 <section id="controls">
-<h3>Controls<a class="headerlink" href="#controls" title="Permalink to this headline">¶</a></h3>
+<h3>Controls<a class="headerlink" href="#controls" title="Permalink to this heading">¶</a></h3>
 <ul class="simple">
 <li><p>For the full Poisson solver
 (<code class="docutils literal notranslate"><span class="pre">gravity.gravity_type</span></code> = <code class="docutils literal notranslate"><span class="pre">PoissonGrav</span></code>), the behavior
@@ -300,9 +307,9 @@ determines how many levels can be tracked by the <code class="docutils literal n
 </section>
 </section>
 <section id="types-of-approximations">
-<h2>Types of Approximations<a class="headerlink" href="#types-of-approximations" title="Permalink to this headline">¶</a></h2>
+<h2>Types of Approximations<a class="headerlink" href="#types-of-approximations" title="Permalink to this heading">¶</a></h2>
 <section id="constantgrav">
-<h3><code class="docutils literal notranslate"><span class="pre">ConstantGrav</span></code><a class="headerlink" href="#constantgrav" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">ConstantGrav</span></code><a class="headerlink" href="#constantgrav" title="Permalink to this heading">¶</a></h3>
 <p>Gravity can be defined as constant in direction and magnitude,
 defined in the inputs file by:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gravity</span><span class="o">.</span><span class="n">const_grav</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9.8</span>
@@ -320,7 +327,7 @@ The actual setting is done in Gravity.cpp as:</p>
 (vertical for 2D axisymmetric).</p>
 </section>
 <section id="monopolegrav">
-<span id="sec-monopole-grav"></span><h3><code class="docutils literal notranslate"><span class="pre">MonopoleGrav</span></code><a class="headerlink" href="#monopolegrav" title="Permalink to this headline">¶</a></h3>
+<span id="sec-monopole-grav"></span><h3><code class="docutils literal notranslate"><span class="pre">MonopoleGrav</span></code><a class="headerlink" href="#monopolegrav" title="Permalink to this heading">¶</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">MonopoleGrav</span></code> integrates the mass distribution on the grid
 in spherical shells, defining an enclosed mass and uses this
 to compute the gravitational potential and acceleration in a
@@ -385,7 +392,7 @@ that is not part of the grid.</p>
 <code class="docutils literal notranslate"><span class="pre">make_radial_phi</span></code> come into play?</p>
 </section>
 <section id="poissongrav">
-<h3><code class="docutils literal notranslate"><span class="pre">PoissonGrav</span></code><a class="headerlink" href="#poissongrav" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">PoissonGrav</span></code><a class="headerlink" href="#poissongrav" title="Permalink to this heading">¶</a></h3>
 <p>The most general case is a self-induced gravitational field,</p>
 <div class="math notranslate nohighlight">
 \[\mathbf{g}(\mathbf{x},t) = \nabla \phi\]</div>
@@ -396,7 +403,7 @@ that is not part of the grid.</p>
 the monopole approximation in spherical coordinates is faster and more
 accurate than solving the Poisson equation.</p>
 <section id="poisson-boundary-conditions-2d">
-<h4>Poisson Boundary Conditions: 2D<a class="headerlink" href="#poisson-boundary-conditions-2d" title="Permalink to this headline">¶</a></h4>
+<h4>Poisson Boundary Conditions: 2D<a class="headerlink" href="#poisson-boundary-conditions-2d" title="Permalink to this heading">¶</a></h4>
 <p>In 2D, if boundary conditions are not periodic in both directions, we
 use a monopole approximation at the coarsest level. This involves
 computing an effective 1D radial density profile (on level = 0 only),
@@ -407,10 +414,10 @@ outwards from the center to get <span class="math notranslate nohighlight">\(\ph
 0\)</span>). For more details, see Section <a class="reference external" href="#sec-monopole-grav">2.2</a>.</p>
 </section>
 <section id="poisson-boundary-conditions-3d">
-<span id="sec-poisson-3d-bcs"></span><h4>Poisson Boundary Conditions: 3D<a class="headerlink" href="#poisson-boundary-conditions-3d" title="Permalink to this headline">¶</a></h4>
+<span id="sec-poisson-3d-bcs"></span><h4>Poisson Boundary Conditions: 3D<a class="headerlink" href="#poisson-boundary-conditions-3d" title="Permalink to this heading">¶</a></h4>
 <p>The following describes methods for doing isolated boundary
 conditions. The best reference for Castro’s implementation of this
-is <span id="id2">[<a class="reference internal" href="zreferences.html#id18" title="M. P. Katz, M. Zingale, A. C. Calder, F. D. Swesty, A. S. Almgren, and W. Zhang. White Dwarf Mergers on Adaptive Meshes. I. Methodology and Code Verification. APJ, 819:94, March 2016. arXiv:1512.06099, doi:10.3847/0004-637X/819/2/94.">44</a>]</span>.</p>
+is <span id="id2">[<a class="reference internal" href="zreferences.html#id18" title="M. P. Katz, M. Zingale, A. C. Calder, F. D. Swesty, A. S. Almgren, and W. Zhang. White Dwarf Mergers on Adaptive Meshes. I. Methodology and Code Verification. APJ, 819:94, March 2016. arXiv:1512.06099, doi:10.3847/0004-637X/819/2/94.">48</a>]</span>.</p>
 <ul>
 <li><p><strong>Multipole Expansion</strong></p>
 <p>In 3D, by default, we use a multipole expansion to estimate the value
@@ -506,7 +513,7 @@ setting <code class="docutils literal notranslate"><span class="pre">gravity.dir
 </section>
 </section>
 <section id="point-mass">
-<h3>Point Mass<a class="headerlink" href="#point-mass" title="Permalink to this headline">¶</a></h3>
+<h3>Point Mass<a class="headerlink" href="#point-mass" title="Permalink to this heading">¶</a></h3>
 <p>Pointmass gravity works with all other forms of gravity, it is not a
 separate option. Since the Poisson equation is linear in potential
 (and its derivative, the acceleration, is also linear), the point mass
@@ -528,16 +535,16 @@ back to the grid). This calculation is done in
 </section>
 </section>
 <section id="gr-correction">
-<h2>GR correction<a class="headerlink" href="#gr-correction" title="Permalink to this headline">¶</a></h2>
+<h2>GR correction<a class="headerlink" href="#gr-correction" title="Permalink to this heading">¶</a></h2>
 <p>In the cases of compact objects or very massive stars, the general
-relativity (GR) effect starts to play a role <a class="footnote-reference brackets" href="#id7" id="id3">2</a>. First, we consider
+relativity (GR) effect starts to play a role <a class="footnote-reference brackets" href="#id7" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>. First, we consider
 the hydrostatic equilibrium due to effects of GR then derive
 GR-correction term for Newtonian gravity.  The correction term is
 applied to the monopole approximation only when <code class="docutils literal notranslate"><span class="pre">USE_GR</span> <span class="pre">=</span> <span class="pre">TRUE</span></code> is
 set in the <code class="docutils literal notranslate"><span class="pre">GNUmakefile</span></code>.</p>
 <p>The formulae of GR-correction here are based on
-<span id="id4">[<a class="reference internal" href="zreferences.html#id47" title="R. Kippenhahn and A. Weigert. Stellar Structure and Evolution. Springer, 1990.">46</a>]</span>. For detailed physics, please refer to
-<span id="id5">[<a class="reference internal" href="zreferences.html#id48" title="Y. B. Zeldovich and D. Novikov. Relativistic astrophysics. Vol.1: Stars and relativity. University of Chicago Press, 1971.">63</a>]</span>. For describing very strong gravitational
+<span id="id4">[<a class="reference internal" href="zreferences.html#id47" title="R. Kippenhahn and A. Weigert. Stellar Structure and Evolution. Springer, 1990.">50</a>]</span>. For detailed physics, please refer to
+<span id="id5">[<a class="reference internal" href="zreferences.html#id48" title="Y. B. Zeldovich and D. Novikov. Relativistic astrophysics. Vol.1: Stars and relativity. University of Chicago Press, 1971.">67</a>]</span>. For describing very strong gravitational
 field, we need to use Einstein field equations</p>
 <div class="math notranslate nohighlight" id="equation-field">
 <span class="eqno">(6)<a class="headerlink" href="#equation-field" title="Permalink to this equation">¶</a></span>\[R_{ik}-\frac{1}{2}g_{ik}R=\frac{\kappa}{c^{2}}T_{ik} \quad , \quad
@@ -618,7 +625,7 @@ really makes a difference. So <a class="reference internal" href="#equation-tov2
 <code class="docutils literal notranslate"><span class="pre">MonopoleGrav</span></code> approximation.</p>
 </section>
 <section id="hydrodynamics-source-terms">
-<h2>Hydrodynamics Source Terms<a class="headerlink" href="#hydrodynamics-source-terms" title="Permalink to this headline">¶</a></h2>
+<h2>Hydrodynamics Source Terms<a class="headerlink" href="#hydrodynamics-source-terms" title="Permalink to this heading">¶</a></h2>
 <p>There are several options to incorporate the effects of gravity into
 the hydrodynamics system. The main parameter here is
 <code class="docutils literal notranslate"><span class="pre">castro.grav_source_type</span></code>.</p>
@@ -656,15 +663,16 @@ of the source term at the cell center, but this method evaluates the
 change in energy at cell edges, using the hydrodynamical mass
 fluxes, permitting total energy to be conserved (excluding possible
 losses at open domain boundaries). See
-<span id="id6">[<a class="reference internal" href="zreferences.html#id19" title="M. P. Katz. White Dwarf Mergers on Adaptive Meshes. PhD thesis, State University of New York at Stony Brook, 2016.">43</a>]</span> for some more details.</p></li>
+<span id="id6">[<a class="reference internal" href="zreferences.html#id19" title="M. P. Katz. White Dwarf Mergers on Adaptive Meshes. PhD thesis, State University of New York at Stony Brook, 2016.">47</a>]</span> for some more details.</p></li>
 </ul>
-<dl class="footnote brackets">
-<dt class="label" id="id7"><span class="brackets"><a class="fn-backref" href="#id3">2</a></span></dt>
-<dd><p>Note: The GR
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id7" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">2</a><span class="fn-bracket">]</span></span>
+<p>Note: The GR
 code and text here were contributed by Ken Chen of Univ. of
 Minnesota.</p>
-</dd>
-</dl>
+</aside>
+</aside>
 </section>
 </section>
 
