@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 150000
+stop_time = 50
 
 # castro.max_dt = 1e-2
 
@@ -54,7 +54,7 @@ amr.max_grid_size   = 128
 amr.derive_plot_vars = ALL
 
 amr.n_error_buf = 4
-problem.max_shock_tagging_level = 0
+amr.grid_eff = 0.3
 
 amr.refinement_indicators = dens press vel ej
 
