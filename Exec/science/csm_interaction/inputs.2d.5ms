@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 50
+stop_time = 150000
 
 # castro.max_dt = 1e-2
 
@@ -46,7 +46,7 @@ amr.v                 = 0       # verbosity in Amr.cpp
 #amr.grid_log         = grdlog  # name of grid logging file
 
 # REFINEMENT / REGRIDDING
-amr.max_level       = 6       # maximum level number allowed
+amr.max_level       = 3       # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2 2 # refinement ratio
 amr.regrid_int      = 1       # how often to regrid
 amr.blocking_factor = 16       # block factor in grid generation
@@ -54,7 +54,6 @@ amr.max_grid_size   = 128
 amr.derive_plot_vars = ALL
 
 amr.n_error_buf = 4
-amr.grid_eff = 0.3
 
 amr.refinement_indicators = dens press vel ej
 
