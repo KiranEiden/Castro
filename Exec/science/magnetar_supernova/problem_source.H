@@ -52,7 +52,12 @@ void problem_source (int i, int j, int k,
     
     if(r > r_dep)
     {
-        return;
+        if(r > 2*r_dep)
+        {
+            return;
+        }
+        
+        frac_lum *= exp(-10.0_rt * (r/r_dep - 1.0_rt));
     }
     
     // Ejecta and CSM mass

@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 50000
+stop_time = 150000
 
 # castro.max_dt = 1e-2
 
@@ -8,8 +8,8 @@ stop_time = 50000
 geometry.is_periodic =  0
 geometry.coord_sys   =  2       # spherical coordinates
 geometry.prob_lo     =  0.0
-geometry.prob_hi     =  1e15
-amr.n_cell           =  262144
+geometry.prob_hi     =  2.5e14
+amr.n_cell           =  256
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # 0 = Interior           3 = Symmetry
@@ -45,15 +45,33 @@ amr.v                 = 0       # verbosity in Amr.cpp
 #amr.grid_log         = grdlog  # name of grid logging file
 
 # REFINEMENT / REGRIDDING
-amr.max_level       = 0       # maximum level number allowed
+amr.max_level       = 6       # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2 2 # refinement ratio
 amr.regrid_int      = 1       # how often to regrid
-amr.blocking_factor = 32       # block factor in grid generation
-amr.max_grid_size   = 32768
+amr.blocking_factor = 16       # block factor in grid generation
+amr.max_grid_size   = 128
 amr.derive_plot_vars = ALL
 
-amr.n_error_buf = 32
+amr.n_error_buf = 4
 problem.max_shock_tagging_level = 0
+
+amr.refinement_indicators = dens press vel ej
+
+amr.refine.dens.field_name = density
+amr.refine.dens.relative_gradient = 2
+amr.refine.dens.start_time = 10
+
+amr.refine.press.field_name = pressure
+amr.refine.press.relative_gradient = 2
+amr.refine.press.start_time = 10
+
+amr.refine.vel.field_name = magvel
+amr.refine.vel.relative_gradient = 2
+amr.refine.vel.start_time = 10
+
+amr.refine.ej.field_name = density
+amr.refine.ej.value_greater = 1e-8
+amr.refine.ej.max_level = 2
 
 # CHECKPOINT FILES
 amr.check_int = 1000    # number of timesteps between checkpoints
@@ -83,7 +101,7 @@ problem.s = 2
 # MAGNETAR PARAMETERS
 castro.add_ext_src = 1
 # Approximate magnetar turn-on time (in s)
-problem.t_mag_act = 100.0
+problem.t_mag_act = 2500.0
 # Fraction of of initial ejecta radius to use when defining deposition region
 problem.f_dep = 0.05
 # Initial magnetar period (in ms)
@@ -97,18 +115,10 @@ problem.B_mag = 1.0
 # Magnetar moment of inertia (in units of 10^45 g cm^2)
 problem.I_mag = 1.0
 
-castro.do_grav = 0
+castro.do_grav = 1
 gravity.gravity_type = MonopoleGrav
 castro.use_point_mass = 1
 castro.point_mass = 3e33
 castro.point_mass_fix_solution = 1
 
 DistributionMapping.strategy = SFC
-
-# Change gamma (done)
-# Explore parabolic dropoff (done)
-# Calculate temperature assuming radiation dominates
-# Calculate total energy as a function of time (done; seems off)
-# Play with luminosity, and compare to analytic
-# Check the zones that it's dumping energy into
-# Compare 1d and 2d

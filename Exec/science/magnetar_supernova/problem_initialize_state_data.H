@@ -112,7 +112,7 @@ void problem_initialize_state_data (int i, int j, int k,
     T = problem::T_0;
     v = problem::v_csm*km_to_cm;
   }
-
+  
   state(i,j,k,URHO) = rho;
   state(i,j,k,UTEMP) = T;
 
