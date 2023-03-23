@@ -2,6 +2,7 @@
 #define problem_source_H
 
 #include <prob_parameters.H>
+#include <eos.H>
 
 using namespace amrex;
 
@@ -113,6 +114,9 @@ void problem_source (int i, int j, int k,
     
     src(i,j,k,UEINT) += drhoe_dt;
     src(i,j,k,UEDEN) += drhoe_dt;
+#ifdef USE_MASS_SOURCE
+    src(i,j,k,URHO)  += (eos_gamma - 1.0_rt) * drhoe_dt / (c*c);
+#endif
 }
 
 #endif

@@ -1,0 +1,3 @@
+ifeq ($(USE_MASS_SOURCE), TRUE)
+    DEFINES += -DUSE_MASS_SOURCE
+endif
