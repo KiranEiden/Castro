@@ -30,8 +30,6 @@ void problem_initialize_state_data (int i, int j, int k,
 
   Real xi = problem::xi_bo;
 
-
-  Real rho_0 = M_csm/pow(R_csm,3);
   Real v_t = problem::beta*clight;
 
 //  Real  tau_0 = problem::kap*M_csm/R_csm/R_csm;
@@ -43,6 +41,8 @@ void problem_initialize_state_data (int i, int j, int k,
   Real R_out = (1.0_rt+delt)*problem::r_0;
 	
   //Real v_t = problem::r_0/problem::t_0;
+  
+  Real rho_0 = 5.01410457e19_rt * problem::Mdot / problem::v_w / (R_csm*R_csm);
   Real rho_a = problem::f_a*rho_0;
 
 
@@ -75,10 +75,10 @@ void problem_initialize_state_data (int i, int j, int k,
       rho0_ej = 3.0_rt/(4.0_rt*M_PI)*M_ej/pow(R_csm,3);
   }
 
-  Real rho0_csm = (3.0_rt - s)/(4.0_rt*M_PI)
-           /(pow(1.0_rt + delt,3-s)-1.0_rt)
-           * M_csm/pow(R_csm,3);
-  Real rho0_bo = rho0_csm*pow(R_out/R_csm,-s);
+  //Real rho0_csm = (3.0_rt - s)/(4.0_rt*M_PI)
+           //(pow(1.0_rt + delt,3-s)-1.0_rt)
+           // * M_csm/pow(R_csm,3);
+  //Real rho0_bo = rho0_csm*pow(R_out/R_csm,-s);
 
   // ejecta portion
   if (r < R_csm)
@@ -97,18 +97,24 @@ void problem_initialize_state_data (int i, int j, int k,
   }
   else // CSM/ambient portion
   {
-    rho = rho_a;
-    // if(r < R_out){
-	//    	rho = rho0_csm*pow(r/R_csm,-s);
-	// 	state(i,j,k,UFX) = rho;
-	// }
-	// else{
-	//    	rho = rho0_csm*pow(1.+delt,-s)*pow(r/R_out,-problem::p);
-	// 	state(i,j,k,UFX) = 0.0;
-	// }
-    // //else rho = rho0_csm*pow(1.0_rt+problem::delt,-s)*exp(-0.5e0_rt*pow(r-R_out,2)/pow(xi*problem::delt*R_csm,2));
-    // 
-	// rho = max(rho,1.01*small_dens);
+    rho = rho_a * pow(r/R_csm,-s);
+    
+    //if(r < R_out)
+    //{
+      //rho = rho0_csm*pow(r/R_csm,-s);
+      //state(i,j,k,UFX) = rho;
+    //}
+    //else
+    //{
+      //rho = rho0_csm*pow(1.+delt,-s)*pow(r/R_out,-problem::p);
+      //state(i,j,k,UFX) = 0.0;
+    //}
+    //else
+    //{
+      //rho = rho0_csm*pow(1.0_rt+problem::delt,-s)*exp(-0.5e0_rt*pow(r-R_out,2)/pow(xi*problem::delt*R_csm,2));
+    //}
+     
+    rho = max(rho,1.01*small_dens);
     T = problem::T_0;
     v = problem::v_csm*km_to_cm;
   }
