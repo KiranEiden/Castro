@@ -39,12 +39,12 @@ void problem_source (int i, int j, int k,
 #endif
 
     // Radial cell width approximation
-	const Real dr = sqrt(dx*dx + dy*dy + dz*dz);
-	// Radius associated with the midpoint of the cell
+    const Real dr = sqrt(dx*dx + dy*dy + dz*dz);
+    // Radius associated with the midpoint of the cell
     const Real r = sqrt(x*x + y*y + z*z);
     // Approximate radial cell boundaries
     const Real r_hi = r + 0.5_rt*dr;
-	const Real r_lo = r - 0.5_rt*dr;
+    const Real r_lo = r - 0.5_rt*dr;
     
     // "Deposition radius" to set initial energy deposition profile
     constexpr Real c = 2.99792458e+10_rt;
