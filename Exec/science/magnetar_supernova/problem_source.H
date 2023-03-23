@@ -48,8 +48,8 @@ void problem_source (int i, int j, int k,
     
     // "Deposition radius" to set initial energy deposition profile
     constexpr Real c = 2.99792458e+10_rt;
-    // const Real r_dep = f_dep * (r_0 + beta*c*time);
-    const Real r_dep = f_dep * r_0;
+    const Real r_dep = f_dep * (r_0 + beta*c*time);
+    //const Real r_dep = f_dep * r_0;
     
     if(r > r_dep)
     {
