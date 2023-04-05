@@ -75,13 +75,24 @@ void problem_initialize_state_data (int i, int j, int k,
       rho0_ej = 3.0_rt/(4.0_rt*M_PI)*M_ej/pow(R_csm,3);
   }
 
+  Real rho0_csm;
+  if(problem::f_r < 1.0_rt)
+  {
+    rho0_csm = rho0_ej * pow(problem::f_r, n);
+  }
+  else
+  {
+    rho0_csm = rho0_ej * pow(problem::f_r, d);
+  }
+  Real p = -log(rho0_csm/rho_a) / log(R_csm/R_out);
+  
   //Real rho0_csm = (3.0_rt - s)/(4.0_rt*M_PI)
            //(pow(1.0_rt + delt,3-s)-1.0_rt)
            // * M_csm/pow(R_csm,3);
   //Real rho0_bo = rho0_csm*pow(R_out/R_csm,-s);
 
   // ejecta portion
-  if (r < R_csm)
+  if(r < R_csm)
   {
     rho = rho0_ej;
 
@@ -97,7 +108,14 @@ void problem_initialize_state_data (int i, int j, int k,
   }
   else // CSM/ambient portion
   {
-    rho = rho_a * pow(r/R_csm,-s);
+    if(r < R_out)
+    {
+      rho = rho0_csm * pow(r/R_csm,-p);
+    }
+    else
+    {
+      rho = rho_a * pow(r/R_out,-s);
+    }
     
     //if(r < R_out)
     //{
