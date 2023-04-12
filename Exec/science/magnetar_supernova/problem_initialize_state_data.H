@@ -162,7 +162,7 @@ void problem_initialize_state_data (int i, int j, int k,
   state(i,j,k,UMZ) = rho*v_z;
 
   state(i,j,k,UFS) = rho;
-//  state(i,j,k,UFX) = 0.0;
+//state(i,j,k,UFX) = 0.0;
 
   eos_t eos_state;
   eos_state.rho = rho;

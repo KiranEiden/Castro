@@ -134,8 +134,11 @@ I_mag    real    1.0   y
 
 ### AMR stuff ##
 
-max_shock_tagging_level	integer	0	y
+# Number of additional refinement levels for the ejecta
+initial_ejecta_tagging_level    integer   0   y
 
+# The radius (in units of the initial ejecta radius) to refine within at initialization
+refine_scale    real    1.25    y
 
 #density filter to smooth out numerical noise
 filter_rhomax	real	1.e-99_rt	y

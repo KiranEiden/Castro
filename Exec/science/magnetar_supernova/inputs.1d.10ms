@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 1e6
+stop_time = 100
 
 # castro.max_dt = 1e-2
 
@@ -9,7 +9,7 @@ geometry.is_periodic =  0
 geometry.coord_sys   =  2       # spherical coordinates
 geometry.prob_lo     =  0.0
 geometry.prob_hi     =  9.2e14
-amr.n_cell           =  16384
+amr.n_cell           =  8192
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # 0 = Interior           3 = Symmetry
@@ -41,7 +41,7 @@ amr.v                 = 0       # verbosity in Amr.cpp
 #amr.grid_log         = grdlog  # name of grid logging file
 
 # REFINEMENT / REGRIDDING
-amr.max_level       = 0       # maximum level number allowed
+amr.max_level       = 4       # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 2 2 # refinement ratio
 amr.regrid_int      = 1       # how often to regrid
 amr.blocking_factor = 16       # block factor in grid generation
@@ -50,23 +50,22 @@ amr.derive_plot_vars = ALL
 
 amr.n_error_buf = 4
 
-amr.refinement_indicators = dens press vel ej
+amr.refinement_indicators = dens press
 
 amr.refine.dens.field_name = density
 amr.refine.dens.relative_gradient = 2
-amr.refine.dens.start_time = 10
+#amr.refine.dens.start_time = 10
 
 amr.refine.press.field_name = pressure
 amr.refine.press.relative_gradient = 2
-amr.refine.press.start_time = 10
+#amr.refine.press.start_time = 10
 
-amr.refine.vel.field_name = magvel
-amr.refine.vel.relative_gradient = 2
-amr.refine.vel.start_time = 10
+problem.initial_ejecta_tagging_level = 2
+problem.refine_scale = 2.0
 
-amr.refine.ej.field_name = density
-amr.refine.ej.value_greater = 1e-8
-amr.refine.ej.max_level = 2
+#amr.refine.ej.field_name = density
+#amr.refine.ej.value_greater = 1e-8
+#amr.refine.ej.max_level = 2
 
 # CHECKPOINT FILES
 amr.check_int = 1000    # number of timesteps between checkpoints
@@ -88,7 +87,7 @@ problem.n = 10.0
 problem.Mdot = 1e-5
 problem.v_w = 10.0
 problem.f_a = 1.0
-problem.s = 2
+problem.s = 0
 problem.delt = 0.0
 
 #problem.delt = 1.0
