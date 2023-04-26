@@ -135,10 +135,22 @@ I_mag    real    1.0   y
 ### AMR stuff ##
 
 # Number of additional refinement levels for the ejecta
-initial_ejecta_tagging_level    integer   0   y
+ejecta_tagging_level    integer   2   y
 
-# The radius (in units of the initial ejecta radius) to refine within at initialization
-refine_scale    real    1.25    y
+# Number of additional refinement levels for the bubble
+bubble_tagging_level    integer   4   y
+
+# The radius (in units of the initial ejecta radius) to refine further within at initialization
+refine_scale_ej    real    1.25    y
+
+# The radius (in units of the initial deposition radius) to refine further within at initialization
+refine_scale_bub    real    2.0    y
+
+# The density gradient refinement criterion (scaled by density(i,j,k))
+dens_grad_crit    real    1e-1    y
+
+# Density criterion to differentiate bubble edge from outer reverse shock
+dens_crit   real    1e-10    y
 
 #density filter to smooth out numerical noise
 filter_rhomax	real	1.e-99_rt	y
