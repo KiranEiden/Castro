@@ -59,17 +59,17 @@ void problem_tagging(int i, int j, int k,
 #endif
 
     const Real r = sqrt(x*x + y*y + z*z);
-    
-    // Initial refinement region to encapsulate ejecta
-    if(r < problem::refine_scale_ej*problem::r_0 && level < problem::ejecta_tagging_level)
+    const Real rr_ej = problem::refine_scale_ej*problem::r_0; 
+    const Real rr_bub = problem::f_dep*problem::r_0 * problem::refine_scale_bub;
+
+    if(r < rr_bub && level < problem::bubble_tagging_level)
     {
+	// Initial refinement region to encapsulate bubble
         tag(i,j,k) = TagBox::SET;
     }
-    
-    // Initial refinement region to encapsulate bubble
-    const Real r_bub = problem::f_dep*problem::r_0 * problem::refine_scale_bub;
-    if(r < r_bub && level < problem::bubble_tagging_level)
+    else if(r < rr_ej && level < problem::ejecta_tagging_level)
     {
+	// Initial refinement region to encapsulate ejecta
         tag(i,j,k) = TagBox::SET;
     }
     
