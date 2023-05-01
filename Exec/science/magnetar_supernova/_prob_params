@@ -147,7 +147,7 @@ refine_scale_ej    real    1.25    y
 refine_scale_bub    real    2.0    y
 
 # The density gradient refinement criterion (scaled by density(i,j,k))
-dens_grad_crit    real    1e-1    y
+dens_grad_crit    real    -1e-1    y
 
 # Density criterion to differentiate bubble edge from outer reverse shock
 dens_crit   real    1e-10    y
