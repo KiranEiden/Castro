@@ -34,12 +34,14 @@ const Real get_magvel(int i, int j, int k, Array4<Real const> const& state)
 /// @param state     simulation state (Fab)
 /// @param level     AMR level
 /// @param geomdata  geometry data
+/// @param time      simulation time
 ///
 AMREX_GPU_HOST_DEVICE AMREX_INLINE
 void problem_tagging(int i, int j, int k,
                      Array4<char> const& tag,
                      Array4<Real const> const& state,
-                     int level, const GeometryData& geomdata)
+                     int level, const GeometryData& geomdata,
+		     const Real time)
 {
     const Real dx = geomdata.CellSize(0);
     const Real x = geomdata.ProbLo(0) + (static_cast<Real>(i) + 0.5_rt)*dx;
@@ -59,59 +61,36 @@ void problem_tagging(int i, int j, int k,
 #endif
 
     const Real r = sqrt(x*x + y*y + z*z);
-    const Real rr_ej = problem::refine_scale_ej*problem::r_0; 
-    const Real rr_bub = problem::f_dep*problem::r_0 * problem::refine_scale_bub;
+    const Real rr_ej = problem::refine_scale_ej*problem::r_0 + time*problem::ej_tag_vel; 
+    const Real rr_bub = problem::f_dep*problem::r_0*problem::depscale * problem::refine_scale_bub + time*problem::bub_tag_vel;
+
+    /*    
+    if(state(i,j,k,URHO) < problem::csm_derefine_dens && level == 0)
+    {
+        tag(i,j,k) = TagBox::CLEAR;
+    }
+    else if(state(i,j,k,URHO) < problem::ej_derefine_dens && level >= problem::ejecta_tagging_level)
+    {
+        tag(i,j,k) = TagBox::CLEAR;
+    }
+    */
+
+    /*
+    if(state(i,j,k,QPRES) < problem::pressure_crit && level < problem::bubble_tagging_level)
+    {
+        tag(i,j,k) = TagBox::SET;
+    }
+    */
 
     if(r < rr_bub && level < problem::bubble_tagging_level)
     {
-	// Initial refinement region to encapsulate bubble
+	// Refinement region to encapsulate bubble
         tag(i,j,k) = TagBox::SET;
     }
     else if(r < rr_ej && level < problem::ejecta_tagging_level)
     {
-	// Initial refinement region to encapsulate ejecta
+	// Refinement region to encapsulate ejecta
         tag(i,j,k) = TagBox::SET;
-    }
-    
-    // Calculate density gradients
-    Real grad_x = 0.0_rt;
-    Real grad_y = 0.0_rt;
-    Real grad_z = 0.0_rt;
-    bool grad_flag = false;
-    
-    const Real dens = state(i,j,k,URHO);
-    
-    if(i > 0)
-    {
-        grad_x = 1.0_rt - state(i-1,j,k,URHO) / dens;
-    }
-    
-#if AMREX_SPACEDIM > 1
-    if(j > 0)
-    {
-        grad_y = 1.0_rt - state(i,j-1,k,URHO) / dens;
-    }
-#endif
-#if AMREX_SPACEDIM > 2
-    if(k > 0)
-    {
-        grad_z = 1.0_rt - state(i,j,k-1,URHO) / dens;
-    }
-#endif
-
-    grad_flag = grad_x <= problem::dens_grad_crit || grad_y <= problem::dens_grad_crit ||
-            grad_z <= problem::dens_grad_crit;
-    
-    if(grad_flag)
-    {
-        if(dens < problem::dens_crit && level < problem::ejecta_tagging_level)
-        {
-            tag(i,j,k) = TagBox::SET;
-        }
-        else if(dens >= problem::dens_crit && level < problem::bubble_tagging_level)
-        {
-            tag(i,j,k) = TagBox::SET;
-        }
     }
 }
 #endif

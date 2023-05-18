@@ -115,6 +115,15 @@ t_mag_act    real    100.0    y
 # Fraction of of initial ejecta radius to use when defining deposition region
 f_dep    real    0.02    y
 
+# Scale of deposition region in units of f_dep * r_0
+depscale real    3.0     y
+
+# Power for power law deposition rate dropoff
+p_dep    real    8.380235398212328     y
+
+# Scalar multiplier for deposition rate
+frac_lum_base    real    9.999617275063291e-01   y
+
 # Initial magnetar period (in ms)
 P_0    real    1.0    y
 
@@ -143,14 +152,23 @@ bubble_tagging_level    integer   4   y
 # The radius (in units of the initial ejecta radius) to refine further within at initialization
 refine_scale_ej    real    1.25    y
 
-# The radius (in units of the initial deposition radius) to refine further within at initialization
-refine_scale_bub    real    2.0    y
+# The radial velocity at which the tagging region for the ejecta expands
+ej_tag_vel         real    3e9     y
 
-# The density gradient refinement criterion (scaled by density(i,j,k))
-dens_grad_crit    real    -1e-1    y
+# The radius (in units of the initial deposition radius f_dep*r_0*depscale) to refine further within at initialization
+refine_scale_bub   real    2.0    y
 
-# Density criterion to differentiate bubble edge from outer reverse shock
-dens_crit   real    1e-10    y
+# The radial velocity at which the tagging region for the bubble expands
+bub_tag_vel        real    4e8    y
+
+# Density below which to not refine beyond the base grid
+csm_derefine_dens   real    2.5e-14   y
+
+# Density below which to not refine beyond the ejecta tagging level
+ej_derefine_dens    real    1e-10     y
+
+# Pressure above which to always refine to the bubble tagging level
+press_crit    real    1e7    y   
 
 #density filter to smooth out numerical noise
 filter_rhomax	real	1.e-99_rt	y

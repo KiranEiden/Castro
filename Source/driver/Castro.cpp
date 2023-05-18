@@ -3389,9 +3389,6 @@ Castro::errorEst (TagBoxArray& tags,
 void
 Castro::apply_problem_tags (TagBoxArray& tags, Real time)
 {
-
-    amrex::ignore_unused(time);
-
     BL_PROFILE("Castro::apply_problem_tags()");
 
     MultiFab& S_new = get_new_data(State_Type);
@@ -3415,7 +3412,7 @@ Castro::apply_problem_tags (TagBoxArray& tags, Real time)
             amrex::ParallelFor(bx,
             [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k)
             {
-                problem_tagging(i, j, k, tag_arr, state_arr, lev, geomdata);
+                problem_tagging(i, j, k, tag_arr, state_arr, lev, geomdata, time);
             });
         }
     }

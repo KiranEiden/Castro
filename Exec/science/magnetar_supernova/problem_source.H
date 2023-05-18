@@ -15,10 +15,10 @@ void problem_source (int i, int j, int k,
 {
     using namespace problem;
     
-    Real frac_lum = 1.0;
+    Real frac_lum = frac_lum_base;
     if(time < t_mag_act)
     {
-        frac_lum = time / t_mag_act;
+        frac_lum *= time / t_mag_act;
     }
     
     const Real dx = geomdata.CellSize(0);
@@ -53,12 +53,12 @@ void problem_source (int i, int j, int k,
     
     if(r > r_dep)
     {
-        if(r > 2*r_dep)
+        if(r > depscale*r_dep)
         {
             return;
         }
         
-        frac_lum *= exp(-10.0_rt * (r/r_dep - 1.0_rt));
+        frac_lum *= exp(-p_dep * (r/r_dep - 1.0_rt));
     }
     
     // Ejecta and CSM mass
