@@ -147,15 +147,12 @@ void problem_initialize_state_data (int i, int j, int k,
 #if AMREX_SPACEDIM == 1 // spherical
   v_x = v;
 #elif AMREX_SPACEDIM == 2 // cylindrical
-  Real phi = std::atan(y/x);
-  v_x = v*std::cos(phi);
-  v_y = v*std::sin(phi);
+  v_x = v * x/r;
+  v_y = v * y/r;
 #elif AMREX_SPACEDIM == 3 // cartesian
-  Real theta = std::acos(z/r);
-  Real phi   = std::atan(y/x);
-  v_x = v*std::cos(phi)*std::sin(theta);
-  v_y = v*std::sin(phi)*std::sin(theta);
-  v_z = v*std::cos(theta);
+  v_x = v * x/r;
+  v_y = v * y/r;
+  v_z = v * z/r;
 #endif
   state(i,j,k,UMX) = rho*v_x;
   state(i,j,k,UMY) = rho*v_y;
