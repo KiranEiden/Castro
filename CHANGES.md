@@ -1,3 +1,30 @@
+# 23.07
+
+  * The parameter castro.state_nghost, which allowed State_Type to have ghost
+    zones, has been removed. (#2502)
+
+  * The additional ghost zone in State_Type, used when radiation is enabled,
+    has been removed. The checkpoint version number has been updated to avoid
+    restarting from a checkpoint with the wrong number of ghost zones. (#2495)
+
+  * The parameter gravity.no_composite was removed (#2483)
+
+  * The parameter spherical_star was removed (#2482)
+
+# 23.06
+
+  * The job_info file now reports the integrator used (#2463)
+  
+  * 1-d cylindrical geometry was fixed (#2465, #2470)
+
+# 23.05
+
+  * fixed some radiation solver indexing for plotting lab/com frame
+    flux (#2415)
+
+  * removed the derived in_nse plot file variable and instead use the
+    value that is returned from the burner (#2409)
+
 # 23.04
 
   * burn_t now stores whether we are in NSE (#2390)
@@ -247,7 +274,7 @@
 
    * We can now set any of the Microphysics runtime parameters in the
      inputs file instead of probin.  Each group of parameters has a
-     namesapce for the inputs file when set this way
+     namespace for the inputs file when set this way
      (e.g. eos.use_coulomb = 1), and the C++ inputs value will take
      precedence over the value set in probin if it is set in both
      places. (#1527)
@@ -288,7 +315,7 @@
      As a result we have also switched the Strang and simplified SDC burners in Castro
      to use this C++ implementation. Most networks used in Castro have already been
      ported to C++. While networks are not required to have a C++ implementation,
-     networks implemented only in Fortran  will not be useable on GPUs, and eventually
+     networks implemented only in Fortran  will not be usable on GPUs, and eventually
      we will use C++ only. (#1313)
 
    * `problem_checkpoint` and `problem_restart` are moved to C++ from Fortran. See
@@ -1002,7 +1029,7 @@
      the timesteps it chooses will be different. (#538)
 
    * A sign error was fixed in the hybrid_hydro angular momentum
-     algorithm This addresses issue #462.  During commmit 0f09693, a
+     algorithm This addresses issue #462.  During commit 0f09693, a
      change in signs was introduced in add_hybrid_momentum_sources,
      which should be analogous to linear_to_hybrid (#594)
 
@@ -1131,7 +1158,7 @@
      max_dxnuc_lev.  (#364, #437, #473)
 
    * The diffusion cutoff now is a linear ramp instead of a
-     discontinous cutoff.  For densities less than
+     discontinuous cutoff.  For densities less than
      diffuse_cutoff_density_hi, the transport coefficient is scaled
      linearly until the density reaches diffuse_cutoff_density, where
      it is zero.
@@ -1317,7 +1344,7 @@
      for neutrinos.
 
      A related change is that it is now possible to set the number
-     of advected quantities (that are not species or EOS auxillary
+     of advected quantities (that are not species or EOS auxiliary
      fields) via NUMADV in your GNUmakefile.
 
 # 18.06
@@ -1382,7 +1409,7 @@
      castro.riemann_solver, which can be set to 1 to use the Colella
      and Glaz Riemann solver.
 
-   * The state variable indicies in Fortran are now all defined in a
+   * The state variable indices in Fortran are now all defined in a
      single file, Source/driver/_variables.  This makes it much
      clearer and consistent and will allow for autodocumentation and
      clean-ups for GPU acceleration in the future.
@@ -1541,7 +1568,7 @@
    * A minor error in the gravity source terms was fixed (#109).
      This error should not normally have been observable.
 
-   * fixed a bug in the artifical viscosity in 1-d in
+   * fixed a bug in the artificial viscosity in 1-d in
      non-Cartesian geometries (issue #175)
 
    * the README.md now describes the process to become a
@@ -1570,7 +1597,7 @@
    * the Riemann solvers have been merged into a single
      dimensional-agnostic version in Src_nd.  In 2-d there was an
      issue with how the Godunov state for the CG solver was stored on
-     interfaces, which would affect the internal enery evolution.
+     interfaces, which would affect the internal energy evolution.
 
    * the PLM and PPM reconstruction routines were merged into
      a single dimensional-agnostic version in hydro/
@@ -1752,7 +1779,7 @@
      are gravity sync solves because there are more of them, but the tradeoff
      is that the simulation is more accurate.
 
-   * the order of computing the temperature and reseting internal
+   * the order of computing the temperature and resetting internal
      energy was changed in a few spots. This will change results by default.
 
    * the radiation-specific source was moved into the Radiation/

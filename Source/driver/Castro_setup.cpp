@@ -281,17 +281,8 @@ Castro::variableSetUp ()
     amrex::Warning("use_retry = 1 is not supported with true SDC.  Disabling");
     use_retry = 0;
   }
-#else
-  if (!use_retry && !abort_on_failure) {
-    amrex::Error("use_retry = 0 and abort_on_failure = F is dangerous and not supported");
-  }
-  if (use_retry && abort_on_failure) {
-      amrex::Warning("use_retry = 1, so disabling abort_on_failure");
-      abort_on_failure = 0;
-  }
 #endif
 #endif
-
 
   // NUM_GROW is the number of ghost cells needed for the hyperbolic
   // portions -- note that this includes the flattening, which
@@ -357,14 +348,7 @@ Castro::variableSetUp ()
   bool state_data_extrap = false;
   bool store_in_checkpoint;
 
-#if defined(RADIATION) 
-  // Radiation should always have at least one ghost zone.
-  int ngrow_state = std::max(1, state_nghost);
-#else
-  int ngrow_state = state_nghost;
-#endif
-
-  BL_ASSERT(ngrow_state >= 0);
+  int ngrow_state = 0;
 
   store_in_checkpoint = true;
   desc_lst.addDescriptor(State_Type,IndexType::TheCellType(),
