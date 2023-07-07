@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 2e5
+stop_time = 1e6
 
 # castro.max_dt = 1e-2
 
@@ -9,7 +9,7 @@ geometry.is_periodic =  0  0
 geometry.coord_sys   =  1       # cylindrical coordinates
 geometry.prob_lo     =  0.0  0.0
 geometry.prob_hi     =  3.2e14 3.2e14
-amr.n_cell           =  512 512
+amr.n_cell           =  2048 2048
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # 0 = Interior           3 = Symmetry
@@ -46,8 +46,8 @@ amr.v                 = 0       # verbosity in Amr.cpp
 #amr.grid_log         = grdlog  # name of grid logging file
 
 # REFINEMENT / REGRIDDING
-amr.max_level       = 3       # maximum level number allowed
-amr.ref_ratio       = 4 4 2 2 2 2 # refinement ratio
+amr.max_level       = 0       # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2 2 2 # refinement ratio
 amr.regrid_int      = 1       # how often to regrid
 amr.blocking_factor = 16       # block factor in grid generation
 amr.max_grid_size   = 128
@@ -55,12 +55,17 @@ amr.derive_plot_vars = ALL
 
 amr.n_error_buf = 4
 
+amr.refinement_indicators = dengrad
+
+amr.refine.dengrad.field_name = density
+amr.refine.dengrad.relative_gradient = 0.1
+
 problem.ejecta_tagging_level = 1
 problem.bubble_tagging_level = 2
 problem.refine_scale_ej = 1.25
 problem.refine_scale_bub = 2.0
-problem.dens_grad_crit = -0.1
-problem.dens_crit = 1e-10
+problem.csm_derefine_dens = 3.85e-14
+problem.ej_derefine_dens = 1e-10
 
 # CHECKPOINT FILES
 amr.check_int = 1000    # number of timesteps between checkpoints
@@ -89,6 +94,9 @@ problem.Mdot = 1e-5
 problem.f_a = 1.1252357013399987
 problem.s = 0
 problem.delt = 0.0
+problem.depscale = 3.0
+problem.p_dep = 6.077670307333427
+problem.frac_lum_base = 0.9994242751956165
 
 # MAGNETAR PARAMETERS
 castro.add_ext_src = 1

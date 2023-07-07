@@ -71,6 +71,11 @@ ebg = np.exp(p_dep * depscale)
 eb = np.exp(p_dep)
 e = np.exp(1.)
 frac_lum_base = (p_dep**3*ebg*eb*e) / (p_dep**3*ebg*eb*e - 3.*p_dep**2*depscale**2*eb + 3.*p_dep**2*ebg - 6.*p_dep*depscale*eb + 6.*p_dep*ebg - 6.*eb + 6.*ebg)
+
+alph = (6 - d) / (5 - d)
+zeta_tr = 2 * (n - 5) * (9 - 2*d) * (11 - 2*d) / ((5 - d)**2 * (n - d) * (3 - d))
+t_tr = zeta_tr * E_sn / E_0 * t_m
+t_tag = (f_dep*r_0*depscale * t_tr**(alph - 1) / (beta * u.c))**(1/alph)
     
 print(f"{Fore.BLUE}f_r{Style.RESET_ALL}: {Fore.GREEN}{f_r.d}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}1/f_r{Style.RESET_ALL}: {Fore.GREEN}{1./f_r.d}{Style.RESET_ALL}")
@@ -83,3 +88,4 @@ print(f"{Fore.BLUE}beta_max{Style.RESET_ALL}: {Fore.GREEN}{(beta*1./f_r).d:.15e}
 print(f"{Fore.BLUE}E_sn{Style.RESET_ALL}: {Fore.GREEN}{E_sn.to(u.erg):.15e}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}p_dep{Style.RESET_ALL}: {Fore.GREEN}{p_dep:.15e}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}frac_lum_base{Style.RESET_ALL}: {Fore.GREEN}{frac_lum_base:.15e}{Style.RESET_ALL}")
+print(f"{Fore.BLUE}t_tag{Style.RESET_ALL}: {Fore.GREEN}{t_tag:.15e}{Style.RESET_ALL}")

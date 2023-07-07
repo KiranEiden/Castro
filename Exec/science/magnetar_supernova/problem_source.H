@@ -14,7 +14,12 @@ void problem_source (int i, int j, int k,
                      const Real dt, const Real time)
 {
     using namespace problem;
-    
+
+    constexpr Real c = 2.99792458e+10_rt;
+    constexpr Real G = 6.67430e-8_rt;
+    constexpr Real k_b = 1.3807e-16_rt;
+    constexpr Real M_sun = 1.98847e33_rt;
+
     Real frac_lum = frac_lum_base;
     if(time < t_mag_act)
     {
@@ -47,7 +52,6 @@ void problem_source (int i, int j, int k,
     const Real r_lo = r - 0.5_rt*dr;
     
     // "Deposition radius" to set initial energy deposition profile
-    constexpr Real c = 2.99792458e+10_rt;
     const Real r_dep = f_dep * (r_0 + beta*c*time);
     //const Real r_dep = f_dep * r_0;
     
@@ -66,7 +70,7 @@ void problem_source (int i, int j, int k,
     // const Real M_csm = M_ej * eta;
     
     // Transition radius
-    // const Real R_t = f_r * r_0;
+    const Real R_t = f_r * r_0;
     
     // Ejecta density
     // const Real rho0 = M_ej / (4.1887902047863905_rt * r_0*r_0*r_0);
@@ -115,7 +119,28 @@ void problem_source (int i, int j, int k,
     src(i,j,k,UEINT) += drhoe_dt;
     src(i,j,k,UEDEN) += drhoe_dt;
 #ifdef USE_MASS_SOURCE
-    src(i,j,k,URHO)  += (eos_gamma - 1.0_rt) * drhoe_dt / (c*c);
+    const Real drho_dt = (eos_gamma - 1.0_rt) * drhoe_dt / (c*c);
+    src(i,j,k,URHO)  += drho_dt;
+    
+    // Deposit the mass with an initial velocity equal to the escape velocity
+    const Real v = sqrt(2.0_rt*G*m_0*M_sun/dr);
+#if AMREX_SPACEDIM == 1
+    const Real v_x = v;
+    const Real v_y = 0.0_rt;
+    const Real v_z = 0.0_rt;
+#elif AMREX_SPACEDIM == 2
+    const Real v_x = v * x/r;
+    const Real v_y = v * y/r;
+    const Real v_z = 0.0_rt;
+#else
+    const Real v_x = v * x/r;
+    const Real v_y = v * y/r;
+    const Real v_z = v * z/r;
+#endif
+    src(i,j,k,UMX) += drho_dt * v_x;
+    src(i,j,k,UMY) += drho_dt * v_y;
+    src(i,j,k,UMZ) += drho_dt * v_z;
+    src(i,j,k,UEDEN) += 0.5_rt * drho_dt * v*v;
 #endif
 }
 

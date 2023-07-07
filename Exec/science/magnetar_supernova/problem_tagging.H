@@ -60,9 +60,10 @@ void problem_tagging(int i, int j, int k,
     const Real z = 0.0_rt;
 #endif
 
+    const Real alpha = (6.0_rt - problem::d) / (5.0_rt - problem::d); 
     const Real r = sqrt(x*x + y*y + z*z);
     const Real rr_ej = problem::refine_scale_ej*problem::r_0 + time*problem::ej_tag_vel; 
-    const Real rr_bub = problem::f_dep*problem::r_0*problem::depscale * problem::refine_scale_bub + time*problem::bub_tag_vel;
+    const Real rr_bub = (problem::f_dep*problem::r_0*problem::depscale) * pow(max((time / problem::refine_timescale_bub), 1.0_rt), alpha) * problem::refine_scale_bub;
 
     /*    
     if(state(i,j,k,URHO) < problem::csm_derefine_dens && level == 0)

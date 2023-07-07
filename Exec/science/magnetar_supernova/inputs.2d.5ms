@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 6e5
+stop_time = 2.5e5
 
 # castro.max_dt = 1e-2
 
@@ -8,8 +8,8 @@ stop_time = 6e5
 geometry.is_periodic =  0  0
 geometry.coord_sys   =  1       # cylindrical coordinates
 geometry.prob_lo     =  0.0  0.0
-geometry.prob_hi     =  2.88e14 2.88e14
-amr.n_cell           =  256  256
+geometry.prob_hi     =  4e14 4e14
+amr.n_cell           =  1024 1024
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # 0 = Interior           3 = Symmetry
@@ -46,57 +46,52 @@ amr.v                 = 0       # verbosity in Amr.cpp
 #amr.grid_log         = grdlog  # name of grid logging file
 
 # REFINEMENT / REGRIDDING
-amr.max_level       = 3       # maximum level number allowed
-amr.ref_ratio       = 2 2 2 2 2 2 # refinement ratio
+amr.max_level       = 2       # maximum level number allowed
+amr.ref_ratio       = 2 4 2 2 2 2 # refinement ratio
 amr.regrid_int      = 1       # how often to regrid
 amr.blocking_factor = 16       # block factor in grid generation
 amr.max_grid_size   = 128
 amr.derive_plot_vars = ALL
 
-amr.n_error_buf = 4
+amr.n_error_buf = 2
 
-amr.refinement_indicators = dens press vel ej
-
-amr.refine.dens.field_name = density
-amr.refine.dens.relative_gradient = 2
-amr.refine.dens.start_time = 10
-
-amr.refine.press.field_name = pressure
-amr.refine.press.relative_gradient = 2
-amr.refine.press.start_time = 10
-
-amr.refine.vel.field_name = magvel
-amr.refine.vel.relative_gradient = 2
-amr.refine.vel.start_time = 10
-
-amr.refine.ej.field_name = density
-amr.refine.ej.value_greater = 1e-8
-amr.refine.ej.max_level = 2
+problem.ejecta_tagging_level = 1
+problem.bubble_tagging_level = 2
+problem.refine_scale_ej = 1.6
+problem.refine_scale_bub = 1.2
+problem.refine_timescale_bub = 7.199246594371119e+03 
+problem.ej_tag_vel = 2e9
 
 # CHECKPOINT FILES
-amr.check_int = 100    # number of timesteps between checkpoints
+amr.check_int = 500    # number of timesteps between checkpoints
 
 # PLOTFILES
-amr.plot_int = 100
+amr.plot_per = 25000
 amr.derive_plot_vars=ALL
+
+amr.small_plot_file = smallplt   # root name of plotfile
+amr.small_plot_per = 500.0      # number of seconds between plotfiles
+amr.small_plot_vars = density
+amr.derive_small_plot_vars = x_velocity y_velocity magvel pressure soundspeed
 
 eos.eos_gamma = 1.3333333333e0
 
 # PROBLEM PARAMETERS
-problem.m_0 = 1.0
-problem.r_0 = 1.8e13
-problem.delt = 1.0
-problem.beta = 3.0e-2
-problem.kap = 0.4
+problem.m_0 = 4.0
+problem.r_0 = 1.365697019330766e+13 
+problem.beta = 2.0e-2
 problem.T_ej = 1e3
-problem.f_r = 1.0
+problem.f_r = 0.10975858895925478
 problem.d = 1
-problem.xi_bo = 0.1
-problem.eta = 10.0 
-problem.eps = 1.0e-2
-problem.p = 30.0
-problem.f_a = 1.0e-10
-problem.s = 2
+problem.n = 10
+problem.v_w = 10
+problem.Mdot = 1e-5
+problem.f_a = 0.27591242369385177
+problem.s = 0
+problem.delt = 0.0
+problem.depscale = 3.0
+problem.p_dep = 6.770800984032515
+problem.frac_lum_base = 0.9997497714143 
 
 # MAGNETAR PARAMETERS
 castro.add_ext_src = 1
@@ -105,7 +100,7 @@ problem.t_mag_act = 2500.0
 # Fraction of of initial ejecta radius to use when defining deposition region
 problem.f_dep = 0.05
 # Initial magnetar period (in ms)
-problem.P_0 = 10.0
+problem.P_0 = 5.0
 # Magnetar radius (in units of 10^6 cm; used in energy/luminosity calculations)
 problem.R_mag = 1.0
 # Sine of the inclination angle between the magnetic and rotational axes

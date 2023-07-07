@@ -158,17 +158,8 @@ ej_tag_vel         real    3e9     y
 # The radius (in units of the initial deposition radius f_dep*r_0*depscale) to refine further within at initialization
 refine_scale_bub   real    2.0    y
 
-# The radial velocity at which the tagging region for the bubble expands
-bub_tag_vel        real    4e8    y
-
-# Density below which to not refine beyond the base grid
-csm_derefine_dens   real    2.5e-14   y
-
-# Density below which to not refine beyond the ejecta tagging level
-ej_derefine_dens    real    1e-10     y
-
-# Pressure above which to always refine to the bubble tagging level
-press_crit    real    1e7    y   
+# Time at which to start expanding bubble refinement region
+refine_timescale_bub  real  1e4   y
 
 #density filter to smooth out numerical noise
 filter_rhomax	real	1.e-99_rt	y
