@@ -1,3 +1,7 @@
 ifeq ($(USE_MASS_SOURCE), TRUE)
     DEFINES += -DUSE_MASS_SOURCE
 endif
+
+ifeq ($(USE_ASYM_DEP), TRUE)
+    DEFINES == -DUSE_ASYM_DEP
+endif
