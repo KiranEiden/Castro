@@ -3,5 +3,5 @@ ifeq ($(USE_MASS_SOURCE), TRUE)
 endif
 
 ifeq ($(USE_ASYM_DEP), TRUE)
-    DEFINES == -DUSE_ASYM_DEP
+    DEFINES += -DUSE_ASYM_DEP
 endif
