@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 4e3
+stop_time = 1000
 
 # castro.max_dt = 1e-2
 
@@ -8,8 +8,8 @@ stop_time = 4e3
 geometry.is_periodic =  0  0
 geometry.coord_sys   =  1       # cylindrical coordinates
 geometry.prob_lo     =  0.0  0.0
-geometry.prob_hi     =  2.5e13 2.5e13
-amr.n_cell           =  256 256
+geometry.prob_hi     =  1e14 1e14
+amr.n_cell           =  512 512
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # 0 = Interior           3 = Symmetry
@@ -46,25 +46,37 @@ amr.v                 = 0       # verbosity in Amr.cpp
 #amr.grid_log         = grdlog  # name of grid logging file
 
 # REFINEMENT / REGRIDDING
-amr.max_level       = 6       # maximum level number allowed
-amr.ref_ratio       = 2 2 2 2 2 2 # refinement ratio
+amr.max_level       = 4       # maximum level number allowed
+amr.ref_ratio       = 2 2 2 2 2 2 2 2 2 2 # refinement ratio
 amr.regrid_int      = 1       # how often to regrid
 amr.blocking_factor = 16       # block factor in grid generation
-amr.max_grid_size   = 128
+amr.max_grid_size   = 256
 amr.derive_plot_vars = ALL
 
-amr.n_error_buf = 8
+amr.n_error_buf = 4
 
-problem.ejecta_tagging_level = 3
-problem.bubble_tagging_level = 6
-problem.refine_scale_ej = 1.6
-problem.refine_scale_bub = 1.2
-problem.refine_timescale_bub = 2.191722738078346e+02
-problem.ej_tag_vel = 3.5e9
+#problem.ejecta_tagging_level = 2
+#problem.bubble_tagging_level = 7
+#problem.refine_scale_ej = 1.6
+#problem.refine_scale_bub = 1.2
+#problem.refine_timescale_bub = 2.191722738078346e+02
+#problem.ej_tag_vel = 3.5e9
 
-amr.refinement_indicators = vel
+amr.refinement_indicators = dengrad velgrad pressgrad vel
 
-amr.refine.vel.max_level = 6
+amr.refine.dengrad.max_level = 4
+amr.refine.dengrad.relative_gradient = 0.5
+amr.refine.dengrad.field_name = density
+
+amr.refine.velgrad.max_level = 4
+amr.refine.velgrad.relative_gradient = 0.5
+amr.refine.velgrad.field_name = magvel
+
+amr.refine.pressgrad.max_level = 4
+amr.refine.pressgrad.relative_gradient = 0.5
+amr.refine.pressgrad.field_name = pressure
+
+amr.refine.vel.max_level = 4
 amr.refine.vel.value_greater = 8.75e9
 amr.refine.vel.field_name = magvel
 
@@ -116,10 +128,10 @@ problem.B_mag = 1.0
 # Magnetar moment of inertia (in units of 10^45 g cm^2)
 problem.I_mag = 1.0
 
-castro.do_grav = 0
+castro.do_grav = 1
 gravity.gravity_type = MonopoleGrav
 castro.use_point_mass = 1
 castro.point_mass = 3e33
-castro.point_mass_fix_solution = 1
+castro.point_mass_fix_solution = 0
 
 DistributionMapping.strategy = SFC
