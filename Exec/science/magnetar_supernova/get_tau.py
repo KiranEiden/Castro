@@ -27,12 +27,12 @@ for ds in ts:
         rlo, zlo, plo = ds.domain_left_edge
         rhi, zhi, phi = ds.domain_right_edge
         
-        for th in np.linspace(0.0, np.pi/2, num=100):
+        for th in np.linspace(0.0, np.pi/2, num=500):
             
             dist = max(rhi - rlo, zhi - zlo)
             ray = ds.ray((rlo, zlo, plo), (dist*np.cos(th)+rlo, dist*np.sin(th)+zlo, plo))
             
-            r = ray[('gas', 'r')]
+            r = np.sqrt(ray[('gas', 'r')]**2 + ray[('gas', 'z')]**2)
             idx = np.argsort(r)
             
             r = r[idx]
