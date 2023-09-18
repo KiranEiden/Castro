@@ -104,7 +104,6 @@ void problem_initialize_state_data (int i, int j, int k,
       T = problem::T_ej;
       v = v_t*(r/R_t);
     }
-	state(i,j,k,UFX) = 0.0;
   }
   else // CSM/ambient portion
   {
@@ -157,15 +156,70 @@ void problem_initialize_state_data (int i, int j, int k,
   state(i,j,k,UMX) = rho*v_x;
   state(i,j,k,UMY) = rho*v_y;
   state(i,j,k,UMZ) = rho*v_z;
+  
+  // Enclosed mass
+  Real M_enc;
+  if(r < R_t)
+  {
+      M_enc = 4.0_rt*M_PI*r*r*r * rho / (3.0_rt - d);
+  }
+  else if(r < R_csm)
+  {
+      M_enc = 4.0_rt*M_PI*R_t*R_t*R_t * rho0_ej;
+      M_enc = M_enc / (3.0_rt - d) + (4.0_rt*M_PI*r*r*r * rho - M_enc) / (3.0_rt - n);
+  }
+  else
+  {
+      // Only need to check if the mass is greater than the ejecta mass
+      M_enc = M_ej + 1e33_rt;
+  }
+  const Real M_enc_frac = M_enc / M_ej;
+  constexpr Real blend_scale = 0.0021714724095162593;
 
-  state(i,j,k,UFS) = rho;
-//state(i,j,k,UFX) = 0.0;
+  for(int ispec = 0; ispec < NumSpec; ++ispec)
+  {
+      state(i,j,k,UFS+ispec) = 0.0_rt;
+  }
+
+  Real blend_fac;
+
+  if(M_enc_frac > 0.2_rt)
+  {
+      state(i,j,k,UFS) = 1.0_rt*rho;
+      blend_fac = exp((0.2_rt - M_enc_frac) / blend_scale);
+      state(i,j,k,UFS+1) = blend_fac;
+  }
+  else if(M_enc_frac > 0.1_rt)
+  {
+      state(i,j,k,UFS+1) = 1.0_rt*rho;
+      blend_fac = exp((M_enc_frac - 0.2_rt) / blend_scale);
+      state(i,j,k,UFS) = blend_scale;
+      blend_fac = exp((0.1_rt - M_enc_frac) / blend_scale);
+      state(i,j,k,UFS+2) = blend_scale;
+  }
+  else
+  {
+      state(i,j,k,UFS+2) = 1.0_rt*rho;
+      blend_fac = exp((M_enc_frac - 0.1_rt) / blend_scale);
+      state(i,j,k,UFS+1) = blend_scale;
+  }
+
+  Real sum = 0.0_rt;
+  for(int ispec = 0; ispec < NumSpec; ++ispec)
+  {
+      sum += state(i,j,k,UFS+ispec);
+  }
+  for(int ispec = 0; ispec < NumSpec; ++ispec)
+  {
+      state(i,j,k,UFS+ispec) /= sum / rho;
+  }
 
   eos_t eos_state;
   eos_state.rho = rho;
   eos_state.T = T;
-  for(int n = 0; n < NumSpec; ++n) {
-    eos_state.xn[n] = state(i,j,k,UFS+n) / state(i,j,k,URHO);
+  for(int ispec = 0; ispec < NumSpec; ++ispec)
+  {
+      eos_state.xn[ispec] = state(i,j,k,UFS+ispec) / state(i,j,k,URHO);
   }
   eos(eos_input_rt,eos_state);
 

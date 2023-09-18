@@ -14,13 +14,13 @@ USE_GRAV = TRUE
 USE_POINTMASS = TRUE
 USE_NEUTRINO = FALSE
 USE_MASS_SOURCE = TRUE
-USE_ASYM_DEP = TRUE
+USE_ASYM_DEP = FALSE
 
 CASTRO_HOME = ../../..
 EOS_DIR     := gamma_law
 
 NETWORK_DIR := general_null
-NETWORK_INPUTS := csm.net
+NETWORK_INPUTS := mag_sup_small.net
 Opacity_dir = csm
 Bpack   := ./Make.package
 Blocs   := .
