@@ -139,12 +139,18 @@ B_mag    real    1.0    y
 # Magnetar moment of inertia (in units of 10^45 g cm^2)
 I_mag    real    1.0   y
 
+# Mass injection rate multiplier
+mass_mult real 1.0  y
+
 ## OTHER PARAMETERS ##
 
 ### AMR stuff ##
 
 # Number of additional refinement levels for the ejecta
 ejecta_tagging_level    integer   2   y
+
+# Number of additional refinement levels for intermediate layer
+buffer_tagging_level    integer   3   y
 
 # Number of additional refinement levels for the bubble
 bubble_tagging_level    integer   4   y
@@ -154,6 +160,9 @@ refine_scale_ej    real    1.25    y
 
 # The radial velocity at which the tagging region for the ejecta expands
 ej_tag_vel         real    3e9     y
+
+# Refine scale for the intermediate AMR level
+refine_scale_buf   real    1.2    y
 
 # The radius (in units of the initial deposition radius f_dep*r_0*depscale) to refine further within at initialization
 refine_scale_bub   real    2.0    y
