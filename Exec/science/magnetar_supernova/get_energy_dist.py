@@ -2,16 +2,23 @@
 
 import yt
 import sys
+import argparse
 import numpy as np
 import unyt as u
 import matplotlib.pyplot as plt
+from scipy.interpolate import RegularGridInterpolator
 from yt.frontends.boxlib.data_structures import CastroDataset
-    
-thresh = 8e9
-plot_mask = False
-plot_M_of_v = True
 
-ts = sys.argv[1:]
+parser = argparse.ArgumentParser()
+parser.add_argument('datafiles', nargs="*")
+parser.add_argument('-t', '--thresh', type=float, default=7.5e3)
+parser.add_argument('--plot_cs_prof', action='store_true')
+parser.add_argument('--plot_mask', action='store_true')
+parser.add_argument('--plot_M_of_v', action='store_true')
+parser.add_argument('-o', '--output', default="energy_dist.dat")
+args = parser.parse_args()
+
+ts = args.datafiles
 if len(ts) < 1:
     sys.exit("No files were available to be loaded.")
 
@@ -29,7 +36,7 @@ def calc_2d(ds):
     frb = yt.FixedResolutionBuffer(slc, (rlo, rhi, zlo, zhi), (nr, nz))
     
     r = frb[('index', 'r')].d
-    if plot_mask:
+    if args.plot_mask or args.plot_cs_prof:
         z = frb[('index', 'z')].d
     dr = rhi.d / nr
     dz = zhi.d / nz
@@ -37,21 +44,61 @@ def calc_2d(ds):
     
     rhoE = frb[('boxlib', 'rho_E')].d
     rhoe = frb[('boxlib', 'rho_e')].d
-    vel = frb[('boxlib', 'magvel')].d
+    cs = frb[('boxlib', 'soundspeed')].d
     
-    of_mask = vel > thresh
+    if args.plot_cs_prof:
+        
+        print(f"Plotting soundspeed profile for {ds}.")
+        # Fixed resolution rays don't work in 2d with my yt version
+        interp = RegularGridInterpolator((r[0], z[:,0]), cs/cs.min(), bounds_error=False, fill_value=None)
+        theta = np.linspace(0.0, np.pi/2, num=100)
+        xi = np.column_stack((np.sin(theta), np.cos(theta)))
+        
+        avg = np.zeros_like(r[0])
+        mxm = np.zeros_like(r[0])
+        mnm = np.zeros_like(r[0])
+        for i in range(nr):
+            pts = interp(r[0,i] * xi)
+            avg[i] = pts.mean()
+            mxm[i] = pts.max()
+            mnm[i] = pts.min()
+            
+        plt.plot(r[0], avg, label=r"$\langle c_s \rangle_{\theta}$")
+        plt.plot(r[0], mxm, linestyle="-.", label=r"$\mathrm{max}_{\theta}(c_s)$")
+        plt.plot(r[0], mnm, linestyle=":", label=r"$\mathrm{min}_{\theta}(c_s)$")
+        plt.hlines(args.thresh, r[0,0], r[0,-1], color="black", linestyle="--", label="Threshold")
+        
+        plt.xlabel(r"$\sqrt{r^2 + z^2}$ [cm]")
+        plt.ylabel(r"$\tilde{c}_s$")
+        plt.yscale("log")
+        plt.legend()
+        
+        plt.savefig(f'cs_prof_{ds}.png')
+        plt.gcf().clear()
+    
+    """
+    x = plt.imshow((cs / cs.min()) - 1.15e4, cmap="seismic", vmin=-2.5e5, vmax=2.5e5)
+    plt.gcf().colorbar(x, ax=plt.gca())
+    plt.show()
+    """
+
+    of_mask = cs/cs.min() > args.thresh
     ej_mask = ~of_mask
 
-    if plot_mask:
+    if args.plot_mask:
+        
+        print(f"Plotting mask for {ds}.")
         plt.scatter(r[of_mask], z[of_mask], s=0.5)
         plt.xlabel('r [cm]')
         plt.ylabel('z [cm]')
         plt.xlim(rlo, rhi)
         plt.ylim(zlo, zhi)
-        plt.savefig(f'mask_{ds.current_time.d:.0f}.png')
+        plt.savefig(f'mask_{ds}.png')
         plt.gcf().clear()
 
-    if plot_M_of_v:
+    if args.plot_M_of_v:
+        
+        print(f"Plotting M(v) for {ds}.")
         plot = yt.ProfilePlot(ds, ('boxlib', 'magvel'), [('gas', 'mass')], weight_field=None)
         plot.save()
 
@@ -62,8 +109,10 @@ def calc_2d(ds):
     
     return Etot_of, Etot_ej, etot_of, etot_ej
 
-with open('energy_dist.dat', 'w') as datfile:
+with open(args.output, 'w') as datfile:
     
+    print(f"Data file: {args.output}.")
+    print()
     print('t', 'E_of', 'E_ej', 'e_of', 'e_ej', file=datfile)
     print('s', 'erg', 'erg', 'erg', 'erg', file=datfile)
 
