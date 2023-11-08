@@ -64,6 +64,7 @@ void problem_tagging(int i, int j, int k,
     const Real r = sqrt(x*x + y*y + z*z);
     const Real rr_ej = problem::refine_scale_ej*problem::r_0 + time*problem::ej_tag_vel; 
     const Real rr_bub = (problem::f_dep*problem::r_0*problem::depscale) * pow(max((time / problem::refine_timescale_bub), 1.0_rt), alpha) * problem::refine_scale_bub;
+    const Real rr_buf = rr_bub * problem::refine_scale_buf;
 
     /*    
     if(state(i,j,k,URHO) < problem::csm_derefine_dens && level == 0)
@@ -87,6 +88,11 @@ void problem_tagging(int i, int j, int k,
     {
 	// Refinement region to encapsulate bubble
         tag(i,j,k) = TagBox::SET;
+    }
+    else if(r < rr_buf && level < problem::buffer_tagging_level)
+    {
+	// Buffer refinement region between bubble and ejecta tagging level
+	tag(i,j,k) = TagBox::SET;
     }
     else if(r < rr_ej && level < problem::ejecta_tagging_level)
     {

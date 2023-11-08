@@ -124,7 +124,7 @@ void problem_source (int i, int j, int k,
     src(i,j,k,UEINT) += drhoe_dt;
     src(i,j,k,UEDEN) += drhoe_dt;
 #ifdef USE_MASS_SOURCE
-    const Real drho_dt = (eos_gamma - 1.0_rt) * drhoe_dt / (c*c);
+    const Real drho_dt = mass_mult * (eos_gamma - 1.0_rt) * drhoe_dt / (c*c);
     src(i,j,k,URHO)  += drho_dt;
     
     // Deposit the mass with an initial velocity equal to the escape velocity
@@ -146,6 +146,9 @@ void problem_source (int i, int j, int k,
     src(i,j,k,UMY) += drho_dt * v_y;
     src(i,j,k,UMZ) += drho_dt * v_z;
     src(i,j,k,UEDEN) += 0.5_rt * drho_dt * v*v;
+
+    // Inject mass as last species
+    src(i,j,k,UFS+NumSpec-1) += drho_dt;
 #endif
 }
 
