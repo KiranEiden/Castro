@@ -1,22 +1,22 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 6000
+stop_time = 8190
 
 # castro.max_dt = 1e-2
 
 # PROBLEM SIZE & GEOMETRY
 geometry.is_periodic =  0  0
 geometry.coord_sys   =  1       # cylindrical coordinates
-geometry.prob_lo     =  0.0  0.0
-geometry.prob_hi     =  1e14 1e14
-amr.n_cell           =  1024 1024
+geometry.prob_lo     =  0.0  -1e14
+geometry.prob_hi     =  1e14  1e14
+amr.n_cell           =  512 1024
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
 # 0 = Interior           3 = Symmetry
 # 1 = Inflow             4 = SlipWall
 # 2 = Outflow            5 = NoSlipWall
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
-castro.lo_bc       =  3  3
+castro.lo_bc       =  3  2
 castro.hi_bc       =  2  2
 
 # WHICH PHYSICS
@@ -46,8 +46,8 @@ amr.v                 = 0       # verbosity in Amr.cpp
 #amr.grid_log         = grdlog  # name of grid logging file
 
 # REFINEMENT / REGRIDDING
-amr.max_level       = 2       # maximum level number allowed
-amr.ref_ratio       = 4 4 4 4 2 2 2 2 2 2 2 # refinement ratio
+amr.max_level       = 3       # maximum level number allowed
+amr.ref_ratio       = 4 2 4 4 2 2 2 2 2 2 2 # refinement ratio
 amr.regrid_int      = 1      # how often to regrid
 amr.blocking_factor = 32     # block factor in grid generation
 amr.max_grid_size   = 256
@@ -57,16 +57,16 @@ amr.n_error_buf = 8
 
 problem.ejecta_tagging_level = 1
 problem.buffer_tagging_level = 2
-problem.bubble_tagging_level = 2
+problem.bubble_tagging_level = 3
 problem.refine_scale_ej = 1.6
-problem.refine_scale_buf = 1.0
+problem.refine_scale_buf = 1.2
 problem.refine_scale_bub = 1.2
-problem.refine_timescale_bub = 2.191722738078346e+02
+problem.refine_timescale_bub = 9.424726295225670e+01
 problem.ej_tag_vel = 3.5e9
 
 amr.refinement_indicators = vel
 
-amr.refine.vel.max_level = 2
+amr.refine.vel.max_level = 3
 amr.refine.vel.value_greater = 8.75e9
 amr.refine.vel.field_name = magvel
 
@@ -86,27 +86,28 @@ eos.eos_gamma = 1.3333333333e0
 
 # PROBLEM PARAMETERS
 problem.m_0 = 4.0
-problem.r_0 = 8.683541455241255e+11 
+problem.r_0 = 7.559461905265518e+11 
 problem.beta = 2.0e-2
 problem.T_ej = 1e3
-problem.f_r = 0.06904853547764561
+problem.f_r = 0.07931593490798478
 problem.d = 1
 problem.n = 10
 problem.v_w = 10
 problem.Mdot = 1e-5
-problem.f_a = 0.1692138355104598
+problem.f_a = 0.5129601566473805
 problem.s = 0
 problem.delt = 0.0
-problem.depscale = 3.0
-problem.p_dep = 8.380235725920453
-problem.frac_lum_base = 9.999617275207164e-01
+problem.depscale = 2.0
+problem.p_dep = 2.063240569675591e+01
+problem.frac_lum_base = 8.619351998534518e-01
+problem.mass_mult = 10.0
 
 # MAGNETAR PARAMETERS
 castro.add_ext_src = 1
 # Approximate magnetar turn-on time (in s)
 problem.t_mag_act = 100.0
 # Fraction of of initial ejecta radius to use when defining deposition region
-problem.f_dep = 0.05
+problem.f_dep = 0.03
 # Initial magnetar period (in ms)
 problem.P_0 = 1.0
 # Magnetar radius (in units of 10^6 cm; used in energy/luminosity calculations)
@@ -121,9 +122,7 @@ problem.I_mag = 1.0
 castro.do_grav = 1
 gravity.gravity_type = MonopoleGrav
 castro.use_point_mass = 1
-castro.point_mass = 3e33
+castro.point_mass = 2.5e33
 castro.point_mass_fix_solution = 0
 
 castro.abundance_failure_rho_cutoff = 1.e200
-
-DistributionMapping.strategy = SFC
