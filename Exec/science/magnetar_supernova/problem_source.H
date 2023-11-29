@@ -127,8 +127,10 @@ void problem_source (int i, int j, int k,
     const Real drho_dt = mass_mult * (eos_gamma - 1.0_rt) * drhoe_dt / (c*c);
     src(i,j,k,URHO)  += drho_dt;
     
+    // Calculate magnetar mass
+    const Real M_mag = 2.5e+33_rt*I_mag/(R_mag*R_mag);
     // Deposit the mass with an initial velocity equal to the escape velocity
-    const Real v = sqrt(2.0_rt*G*m_0*M_sun/dr);
+    const Real v = sqrt(4.0_rt*G*M_mag/dr);
 #if AMREX_SPACEDIM == 1
     const Real v_x = v;
     const Real v_y = 0.0_rt;
@@ -148,7 +150,7 @@ void problem_source (int i, int j, int k,
     src(i,j,k,UEDEN) += 0.5_rt * drho_dt * v*v;
 
     // Inject mass as last species
-    src(i,j,k,UFS+NumSpec-1) += drho_dt;
+    // src(i,j,k,UFS+NumSpec-1) += drho_dt;
 #endif
 }
 
