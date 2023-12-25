@@ -41,20 +41,34 @@ def calc_1d(ds):
     
 def calc_2d(ds):
     
-    slc = ds.slice(2, np.pi)
-    nr, nz, _ = ds.domain_dimensions*args.refinement
-    rlo, zlo, plo = ds.domain_left_edge
-    rhi, zhi, plo = ds.domain_right_edge
-    frb = yt.FixedResolutionBuffer(slc, (rlo, rhi, zlo, zhi), (nz, nr))
+    # slc = ds.slice(2, np.pi)
+    # nr, nz, _ = ds.domain_dimensions*args.refinement
+    # rlo, zlo, plo = ds.domain_left_edge
+    # rhi, zhi, plo = ds.domain_right_edge
+    # frb = yt.FixedResolutionBuffer(slc, (rlo, rhi, zlo, zhi), (nz, nr))
     
-    r = frb[('index', 'r')].d
+    # Make CoveringGrid object
+    nr, nz, _ = ds.domain_dimensions * args.refinement
+    rlo, zlo, plo = ds.domain_left_edge
+    rhi, zhi, _ = ds.domain_right_edge
+    # 0.0 * plo is to ensure correct units on the 0.0
+    cg = ds.covering_grid(ds.max_level, (rlo, zlo, 0.0*plo), (nr, nz, 1))
+    
+    def getd(cg, field, units=False):
+        
+        arr = cg[field].squeeze()
+        if units:
+            return arr
+        return arr.d
+    
+    r = getd(cg, 'r')
     dr = (rhi - rlo).d / nr
     dz = (zhi  - zlo).d / nz
     vol = np.pi * ((r+dr/2)**2 - (r-dr/2)**2) * dz
     
-    rhoE = frb[('boxlib', 'rho_E')].d
-    rhoe = frb[('boxlib', 'rho_e')].d
-    rho = frb[('gas', 'density')].d
+    rhoE = getd(cg, 'rho_E')
+    rhoe = getd(cg, 'rho_e')
+    rho = getd(cg, 'density')
 
     Etot = (rhoE * vol).sum()
     etot = (rhoe * vol).sum()

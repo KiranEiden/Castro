@@ -32,24 +32,28 @@ ts = map(tf, ts)
 def do_plot_cs_prof(r, z, cs):
     
     print(f"Plotting soundspeed profile for {ds}.")
+    
+    # Get 1d list of r values
+    r1d = r[:,0]
+    
     # Fixed resolution rays don't work in 2d with my yt version
-    interp = RegularGridInterpolator((r[0], z[:,0]), cs/cs.min(), bounds_error=False, fill_value=None)
+    interp = RegularGridInterpolator((r1d, z[0]), cs/cs.min(), bounds_error=False, fill_value=None)
     theta = np.linspace(0.0, np.pi, num=100)
     xi = np.column_stack((np.sin(theta), np.cos(theta)))
     
-    avg = np.zeros_like(r[0])
-    mxm = np.zeros_like(r[0])
-    mnm = np.zeros_like(r[0])
-    for i in range(nr):
-        pts = interp(r[0,i] * xi)
+    avg = np.zeros_like(r1d)
+    mxm = np.zeros_like(r1d)
+    mnm = np.zeros_like(r1d)
+    for i in range(len(r1d)):
+        pts = interp(r1d[i] * xi)
         avg[i] = pts.mean()
         mxm[i] = pts.max()
         mnm[i] = pts.min()
         
-    plt.plot(r[0], avg, label=r"$\langle c_s \rangle_{\theta}$")
-    plt.plot(r[0], mxm, linestyle="-.", label=r"$\mathrm{max}_{\theta}(c_s)$")
-    plt.plot(r[0], mnm, linestyle=":", label=r"$\mathrm{min}_{\theta}(c_s)$")
-    plt.hlines(args.thresh, r[0,0], r[0,-1], color="black", linestyle="--", label="Threshold")
+    plt.plot(r1d, avg, label=r"$\langle c_s \rangle_{\theta}$")
+    plt.plot(r1d, mxm, linestyle="-.", label=r"$\mathrm{max}_{\theta}(c_s)$")
+    plt.plot(r1d, mnm, linestyle=":", label=r"$\mathrm{min}_{\theta}(c_s)$")
+    plt.hlines(args.thresh, r1d[0], r1d[-1], color="black", linestyle="--", label="Threshold")
     
     plt.xlabel(r"$\sqrt{r^2 + z^2}$ [cm]")
     plt.ylabel(r"$\tilde{c}_s$")
@@ -65,8 +69,8 @@ def do_plot_mask(r, z, mask):
     plt.scatter(r[mask], z[mask], s=0.5)
     plt.xlabel('r [cm]')
     plt.ylabel('z [cm]')
-    plt.xlim(r[0,0], r[0,-1])
-    plt.ylim(z[0,0], z[-1,0])
+    plt.xlim(r[0,0], r[-1,0])
+    plt.ylim(z[0,0], z[0,-1])
     plt.savefig(f'mask_{ds}.png')
     plt.gcf().clear()
     
@@ -80,27 +84,34 @@ def calc_2d(ds):
     
     do_mask = not args.no_dist
     
-    # Make FRB
-    slc = ds.slice(2, np.pi)
-    nr, nz, _ = ds.domain_dimensions*args.refinement
-    rlo, zlo, _ = ds.domain_left_edge
+    # Make CoveringGrid object
+    nr, nz, _ = ds.domain_dimensions * args.refinement
+    rlo, zlo, plo = ds.domain_left_edge
     rhi, zhi, _ = ds.domain_right_edge
-    frb = yt.FixedResolutionBuffer(slc, (rlo, rhi, zlo, zhi), (nr, nz))
+    # 0.0 * plo is to ensure correct units on the 0.0
+    cg = ds.covering_grid(ds.max_level, (rlo, zlo, 0.0*plo), (nr, nz, 1))
+    
+    def getd(cg, field, units=False):
+        
+        arr = cg[field].squeeze()
+        if units:
+            return arr
+        return arr.d
     
     # Get position data and calculate cell volumes
-    r = frb[('index', 'r')].d
+    r = getd(cg, 'r')
     if args.plot_mask or args.plot_cs_prof:
-        z = frb[('index', 'z')].d
+        z = getd(cg, 'z')
     dr = (rhi - rlo).d / nr
     dz = (zhi - zlo).d / nz
     vol = np.pi * ((r+dr/2)**2 - (r-dr/2)**2) * dz
     
     # Get data for relevant fields
-    rhoE = frb[('boxlib', 'rho_E')].d
-    rhoe = frb[('boxlib', 'rho_e')].d
-    rho = frb[('boxlib', 'density')].d
+    rhoE = getd(cg, 'rho_E')
+    rhoe = getd(cg, 'rho_e')
+    rho = getd(cg, 'density')
     if do_mask or args.plot_mask or args.plot_cs_prof:
-        cs = frb[('boxlib', 'soundspeed')].d
+        cs = getd(cg, 'soundspeed')
     
     if args.plot_cs_prof:
         do_plot_cs_prof(r, z, cs)
