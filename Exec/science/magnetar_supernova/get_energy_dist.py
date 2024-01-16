@@ -7,12 +7,13 @@ import numpy as np
 import unyt as u
 import matplotlib.pyplot as plt
 from scipy.interpolate import RegularGridInterpolator
+from analysis_util import AMRData
 from yt.frontends.boxlib.data_structures import CastroDataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument('datafiles', nargs="*")
 parser.add_argument("--no_dist", action='store_true')
-parser.add_argument('-r', '--refinement', type=int, default=1)
+parser.add_argument('-l', '--level', type=int, default=0)
 parser.add_argument('-t', '--thresh', type=float, default=7.5e3)
 parser.add_argument('--plot_cs_prof', action='store_true')
 parser.add_argument('--plot_mask', action='store_true')
@@ -41,9 +42,9 @@ def do_plot_cs_prof(r, z, cs):
     theta = np.linspace(0.0, np.pi, num=100)
     xi = np.column_stack((np.sin(theta), np.cos(theta)))
     
-    avg = np.zeros_like(r1d)
-    mxm = np.zeros_like(r1d)
-    mnm = np.zeros_like(r1d)
+    avg = np.empty_like(r1d)
+    mxm = np.empty_like(r1d)
+    mnm = np.empty_like(r1d)
     for i in range(len(r1d)):
         pts = interp(r1d[i] * xi)
         avg[i] = pts.mean()
@@ -57,6 +58,7 @@ def do_plot_cs_prof(r, z, cs):
     
     plt.xlabel(r"$\sqrt{r^2 + z^2}$ [cm]")
     plt.ylabel(r"$\tilde{c}_s$")
+    plt.xscale("log")
     plt.yscale("log")
     plt.legend()
     
@@ -84,34 +86,18 @@ def calc_2d(ds):
     
     do_mask = not args.no_dist
     
-    # Make CoveringGrid object
-    nr, nz, _ = ds.domain_dimensions * args.refinement
-    rlo, zlo, plo = ds.domain_left_edge
-    rhi, zhi, _ = ds.domain_right_edge
-    # 0.0 * plo is to ensure correct units on the 0.0
-    cg = ds.covering_grid(ds.max_level, (rlo, zlo, 0.0*plo), (nr, nz, 1))
-    
-    def getd(cg, field, units=False):
-        
-        arr = cg[field].squeeze()
-        if units:
-            return arr
-        return arr.d
-    
-    # Get position data and calculate cell volumes
-    r = getd(cg, 'r')
-    if args.plot_mask or args.plot_cs_prof:
-        z = getd(cg, 'z')
-    dr = (rhi - rlo).d / nr
-    dz = (zhi - zlo).d / nz
+    # Make data object and retrieve position data
+    ad = AMRData(ds, args.level, verbose=True)
+    r, z = ad.position_data(units=False)
+    dr, dz = ad.dds[:, args.level].d
     vol = np.pi * ((r+dr/2)**2 - (r-dr/2)**2) * dz
     
     # Get data for relevant fields
-    rhoE = getd(cg, 'rho_E')
-    rhoe = getd(cg, 'rho_e')
-    rho = getd(cg, 'density')
+    rhoE = ad['rho_E'].d
+    rhoe = ad['rho_e'].d
+    rho = ad['density'].d
     if do_mask or args.plot_mask or args.plot_cs_prof:
-        cs = getd(cg, 'soundspeed')
+        cs = ad['soundspeed'].d
     
     if args.plot_cs_prof:
         do_plot_cs_prof(r, z, cs)
@@ -174,3 +160,5 @@ with open(args.output, 'w') as datfile:
         vals = eval(fstr)
         
         print(ds.current_time.d, *vals, file=datfile)
+        
+    print("Task completed.")

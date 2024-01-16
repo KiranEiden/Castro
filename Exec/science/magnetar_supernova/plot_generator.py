@@ -1,0 +1,480 @@
+#!/usr/bin/env python3
+
+import yt
+import matplotlib.pyplot as plt
+import unyt as u
+from yt.frontends.boxlib.data_structures import CastroDataset
+
+import os
+import sys
+import glob
+import argparse
+import warnings
+import numpy as np
+
+from datetime import datetime
+
+#########################
+# Argument help strings #
+#########################
+
+description = """Generates plots of datasets using a specified yt plot function. Works for slice and projection
+        plots, but does not support particles. Slice plots are the default. Any argument that states it takes a
+        dictionary takes colon-separated keyword:value pairs. Lists can be supplied as comma-separated values with
+        no whitespace between them."""
+datasets_help = "A list of datasets to be loaded by yt. Will be sorted by plot number by default."
+list_fields_help = "List out the available fields in each data file and exit."
+proj_help = "Make a ProjectionPlot instead of a SlicePlot."
+out_help = "The desired output directory for the image files."
+var_help = "The variable to plot. Set to 'temp' by default."
+normal_help = "The normal vector to the plot. Can either be an axis name or a sequence of floats."
+bounds_help = "The bounds for the colorbar."
+cmap_help = "The colormap for the variable to plot."
+log_help = "If provided, sets the plot to a logarithmic scale."
+time_help = """If provided, adds a timestamp to each plot with the given precision. Additional
+        configuration options can be set using --timeopt."""
+time_opt_help = """Dictionary of additional arguments for formatting the time displayed on the plot.
+        Any keyword arguments to annotate_timestamp should be valid, and the additional option
+        'sci' can be set to 1 to give the time in scientific notation."""
+plot_args_help = """Dictionary of additional plot args to supply to the plot constructor
+        (e.g. '--plot_args method:integrate' for a projection plot). Will be overridden by arguments
+        supplied through other options. See script description for explanation of dictionary format."""
+ext_help = "The extension of the file format to save to. PNG by default."
+save_args_help = """Keyword arguments to supply to the save function. Should be valid keyword arguments for the
+        matplotlib.pyplot.savefig function, in the form of a dictionary (see script description). Example: --save_args
+        dpi:480 orientation:landscape."""
+sort_help = """A floating point number specifying the digits to sort file names by. Digits preceding the decimal point
+        give the starting index, digits following the decimal point give the number of characters. Make negative for
+        descending order."""
+quiver_help = """Overplots a vector field on each generated plot, taking the x and y components, the number of
+        points to skip, and a scale factor for the arrows."""
+contour_help = "Adds a contour map to the plot, with NCONT contours and limits specified by CLIM_LOW and CLIM_HI."
+contour_opt_help = "Plot args to supply to the matplotlib contour function. Takes a color and a linewidth."
+xlim_help = "The x-axis limits in cm."
+ylim_help = "The y-axis limits in cm."
+stream_help = """Adds streamlines to the plot showing the given vector field (x and y components are first two arguments).
+        The third argument should be the streamline density factor (e.g. 16)."""
+stream_opt_help = """Options for the streamlines -- will be ignored if streamlines themselves were not requested. Options
+        should be supplied in the form of a dictionary (see script description). Valid options include
+        display_threshold (to turn off the streamlines below a certain value for field color), outline (add a 1 px
+        outline to the streamlines, value should be the color), and any keyword argument that can be supplied to
+        matplotlib.pyplot.streamplot as a string, float, int, or list of any of the three."""
+grid_help = """Add an overlay to the plot showing the hierarchical grid structure. May omit arguments or
+        supply additional options to yt as a dictionary (e.g. --grid alpha:0.5 min_level:1 cmap:gray)."""
+cell_edges_help = "Overplot the edges of the grid cells."
+window_size_help = "Length of the plot window in inches in its maximum dimension. Can only be specified for on-axis plots."
+aspect_help = "Aspect ratio to use for the plot axes (not the image). Can only be specified for on-axis plots."
+even_dim_help = """Adjust the image size in pixels in each dimension to the nearest multiple of two.
+        At the time of writing, using this option necessitates saving the figure directly with the
+        matplotlib interface, as yt resets the figure size at some point during the plot.save() call."""
+Pmag_help = "Magnetar period (in ms) to use for setting the magnetar timescale. Assumes B = 10^{15} Gauss."
+
+#########################
+# Argument parser setup #
+#########################
+
+parser = argparse.ArgumentParser(description=description)
+parser.add_argument('datasets', nargs='*', help=datasets_help)
+parser.add_argument('-l', '--list_fields', action='store_true', help=list_fields_help)
+parser.add_argument('--proj', action='store_true', help=proj_help)
+parser.add_argument('-o', '--out', default='', help=out_help)
+parser.add_argument('-v', '--var', default='temp', help=var_help)
+parser.add_argument('-n', '--normal', nargs='+', default='', help=normal_help)
+parser.add_argument('-b', '--bounds', nargs=2, type=float, metavar=('LOWER', 'UPPER'),
+        help=bounds_help)
+parser.add_argument('-c', '--cmap', metavar=('NAME',), help=cmap_help)
+parser.add_argument('--log', action='store_true', help=log_help)
+parser.add_argument('-t', '--time', type=int, metavar=('PRECISION',), help=time_help)
+parser.add_argument('-to', '--time_opt', nargs='+', help=time_opt_help)
+parser.add_argument('--plot_args', nargs='+', default=None, help=plot_args_help)
+parser.add_argument('-e', '--ext', default='png', help=ext_help)
+parser.add_argument('--save_args', nargs='*', help=save_args_help)
+parser.add_argument('-s', '--sort', type=float, default=0.0, help=sort_help)
+parser.add_argument('-q', '--quiver', nargs=4, metavar=('XFIELD', 'YFIELD', 'FACTOR', 'SCALE'),
+        help=quiver_help)
+parser.add_argument('-C', '--contour', nargs=4, metavar=('FIELD', 'NCONT', 'CLIM_LOW', 'CLIM_HI'),
+        help=contour_help)
+parser.add_argument('-Co', '--contour_opt', nargs=2, metavar=('COLOR', 'LINEWIDTH'),
+        help=contour_opt_help)
+parser.add_argument('-x', '--xlim', nargs=2, type=float, metavar=('UPPER', 'LOWER'), help=xlim_help)
+parser.add_argument('-y', '--ylim', nargs=2, type=float, metavar=('UPPER', 'LOWER'), help=ylim_help)
+parser.add_argument('--xseq', nargs=3, type=float, metavar=('START', 'STOP', 'STEP'))
+parser.add_argument('--yseq', nargs=3, type=float, metavar=('START', 'STOP', 'STEP'))
+parser.add_argument('-S', '--stream', nargs=3, metavar=('XFIELD', 'YFIELD', 'FACTOR'))
+parser.add_argument('-So', '--stream_opt', nargs='*', help=stream_opt_help)
+parser.add_argument('--grid', nargs='*', default=None, help=grid_help)
+parser.add_argument('--cell_edges', action='store_true', help=cell_edges_help)
+parser.add_argument('--window_size', type=float, default=8.0, help=window_size_help)
+parser.add_argument('--aspect', type=float, default=None, help=aspect_help)
+parser.add_argument('--even_dim', action='store_true', help=even_dim_help)
+parser.add_argument('--Pmag', type=float, default=1.0, help=Pmag_help)
+
+args = parser.parse_args(sys.argv[1:])
+
+##############################
+# Process argparse arguments #
+##############################
+
+def safe_convert(string_val):
+    """
+    Convert string value to an int or float if possible, and return it if not.
+    Can also convert comma-separated lists of these types.
+    """
+
+    values = string_val.split(',')
+
+    for i in range(len(values)):
+
+        try:
+            values[i] = int(values[i])
+        except ValueError:
+            pass
+
+        try:
+            values[i] = float(values[i])
+        except ValueError:
+            pass
+
+    if len(values) == 1:
+        values = values[0]
+    return values
+
+def get_argdict(arglist):
+    """
+    Converts whitespace-delimited list of key-value pairs into dictionary. Can handle numeric
+    and list values.
+    """
+
+    pairs = map(lambda s: s.split(':'), arglist)
+    pairs = ((k, safe_convert(v)) for k, v in pairs)
+    return dict(pairs)
+    
+if args.time is not None:
+    
+    if args.time_opt is not None:
+        args.time_opt = get_argdict(args.time_opt)
+    else:
+        args.time_opt = dict()
+
+if args.normal:
+
+    if len(args.normal) == 1:
+        args.normal = args.normal[0]
+    else:
+        args.normal = list(map(float, args.normal))
+
+if args.quiver is not None:
+
+    # Number of points to skip
+    args.quiver[2] = int(args.quiver[2])
+    # Scale factor
+    args.quiver[3] = float(args.quiver[3])
+
+if args.stream is not None:
+
+    # Streamline density factor
+    args.stream[2] = int(args.stream[2])
+    stream_opt = {}
+
+    # Additional streamline options
+    if args.stream_opt is not None:
+        stream_opt = get_argdict(args.stream_opt)
+
+if args.contour is not None:
+
+    args.contour[1:] = list(map(float, args.contour[1:]))
+    contour_opt = {}
+
+    if args.contour_opt is not None:
+        plot_args = {'colors': args.contour_opt[0], 'linewidths': int(args.contour_opt[1])}
+        contour_opt['plot_args'] = plot_args
+
+#########################
+# Make output directory #
+#########################
+
+if not args.out:
+    args.out = os.getcwd()
+if not os.path.exists(args.out):
+    os.makedirs(args.out)
+
+#######################
+# Sort and load files #
+#######################
+
+ts = args.datasets
+if len(ts) < 1:
+    sys.exit("No files were available to be loaded.")
+
+desc = args.sort < 0
+start = abs(int(args.sort))
+nchars = int(str(args.sort).split('.')[1])
+
+if nchars == 0:
+    key = lambda fname: fname[start:]
+else:
+    key = lambda fname: fname[start:start + nchars]
+ts.sort(key=key, reverse=desc)
+
+print("Will load the following files: {}\n".format(ts))
+
+tf = lambda file: CastroDataset(file.rstrip('/'))   
+ts = map(tf, ts)
+
+#############################
+# Prepare to generate plots #
+#############################
+
+def get_width(ds, xlim=None, ylim=None, zlim=None):
+    """ Get the width of the plot. """
+
+    xw, yw, zw = ds.domain_width.in_cgs()
+
+    if xlim is not None:
+        xw = min((xlim[1] - xlim[0]), xw) * u.cm
+
+    if ylim is not None:
+        yw = min((ylim[1] - ylim[0]), yw) * u.cm
+
+    if zlim is not None:
+        zw = min((zlim[1] - zlim[0]), zw) * u.cm
+
+    return xw, yw, zw
+
+def get_center(ds, xlim=None, ylim=None, zlim=None):
+    """ Get the coordinates of the center of the plot. """
+
+    xctr, yctr, zctr = ds.domain_center.in_cgs()
+
+    if xlim is not None:
+        xctr = 0.5 * (xlim[0] + xlim[1]) * u.cm
+
+    if ylim is not None:
+        yctr = 0.5 * (ylim[0] + ylim[1]) * u.cm
+
+    if zlim is not None:
+        zctr = 0.5 * (zlim[0] + zlim[1]) * u.cm
+
+    return xctr, yctr, zctr
+
+#####################
+# Loop and generate #
+#####################
+
+def make_plot(ds, args, xlim, ylim, fname_pref=None):
+    
+    field = args.var
+    
+    if args.plot_args:
+        settings = get_argdict(args.plot_args)
+    else:
+        settings = dict()
+    
+    settings['center'] = get_center(ds, xlim, ylim)
+    settings['width'] = get_width(ds, xlim, ylim)
+
+    if args.normal:
+        settings['normal'] = args.normal
+
+    if ds.geometry in {'cylindrical', 'spherical'}:
+        settings.setdefault('normal', 'theta')
+        settings['origin'] = 'native'
+    else:
+        settings.setdefault('normal', 'z')
+
+    if isinstance(settings['normal'], str):
+        settings['window_size'] = args.window_size
+        settings['aspect'] = args.aspect
+
+    if args.proj:
+        plotfunc = yt.ProjectionPlot
+        normal = settings.pop('normal')
+        settings['axis'] = normal
+    else:
+        plotfunc = yt.SlicePlot
+    
+    # del settings['center']
+    # del settings['width']
+    plot = plotfunc(ds, fields=field, **settings)
+    
+    # ~ ray = ds.ortho_ray(0, (0, 0))
+    # ~ idx = np.argsort(ray['r'].d)
+    # ~ t_hr = ds.current_time.to('hr').d
+    # ~ plt.plot(ray['r'].d[idx], ray['soundspeed'].d[idx], label=f't = {t_hr:.2f} h')
+    # ~ plt.xlabel(r'$r$ [cm]')
+    # ~ plt.ylabel(r'$c_s$ [cm/s]')
+    # ~ plt.yscale("log")
+    # ~ plt.legend()
+
+    #######################################
+    # Additional settings and annotations #
+    #######################################
+
+    if args.cmap:
+        plot.set_cmap(field=field, cmap=args.cmap)
+
+    if args.bounds is not None:
+        plot.set_zlim(field, *args.bounds)
+
+    plot.set_log(field, args.log)
+
+    if args.time is not None:
+
+        if args.time_opt.pop('sci', 0):
+            scistr = 'e'
+        else:
+            scistr = 'f'
+        time_format = 't = {{time:.{}{}}}{{units}}'.format(args.time, scistr)
+
+        args.time_opt.setdefault('corner', 'upper_left')
+        args.time_opt.setdefault('time_format', time_format)
+        args.time_opt.setdefault('draw_inset_box', False)
+        args.time_opt.setdefault('time_unit', 's')
+
+        reg = ds.current_time.units.registry
+        reg.add('tmag', base_value=(args.Pmag**2 * 2047.49866274), dimensions=u.dimensions.time)
+        
+        # Previously: draw_inset_box=True, inset_box_args={'alpha': 0.0}
+        plot.annotate_timestamp(**args.time_opt)
+
+    if args.quiver is not None:
+        plot.annotate_quiver(*args.quiver)
+
+    if args.contour is not None:
+        plot.annotate_contour(args.contour[0], ncont=args.contour[1], clim=args.contour[2:], **contour_opt)
+
+    if args.stream is not None:
+
+        plot_args = stream_opt.copy()
+
+        # Non-matplotlib arguments
+        outline = plot_args.pop('outline', None)
+        field_color = plot_args.pop('field_color', None)
+        display_threshold = plot_args.pop('display_threshold', None)
+        cbar = plot_args.pop('cbar', False)
+
+        kw = dict(field_color=field_color, display_threshold=display_threshold)
+
+        # Defaults for some matplotlib arguments
+        plot_args.setdefault('linewidth', 2)
+        plot_args.setdefault('arrowstyle', '->')
+
+        if outline is not None:
+            plot_args_outline = plot_args.copy()
+            plot_args_outline['color'] = outline
+            plot_args_outline['linewidth'] =  plot_args['linewidth'] + 1
+            plot.annotate_streamlines(*args.stream, plot_args=plot_args_outline, **kw)
+
+        if cbar: kw['add_colorbar'] = True
+
+        plot.annotate_streamlines(*args.stream, plot_args=plot_args, **kw)
+
+    if args.grid is not None:
+
+        opts = get_argdict(args.grid)
+        plot.annotate_grids(**opts)
+
+        # cmap = yt.make_colormap([('white', 64), ((188/255, 95/255, 211/255), 64),
+        #         ((0, 0.627, 1.0), 64), ('purple', 64)],
+        #         name='gridmap', interpolate=False)
+        # opts = dict(zip(args.grid[::2], args.grid[1::2]))
+        # plot.annotate_grids(**opts, max_level=2)
+
+    if args.cell_edges:
+
+        plot.annotate_cell_edges()
+
+    #############
+    # Save plot #
+    #############
+
+    fig = plot.plots[field].figure
+
+    if args.save_args is None:
+        save_args = {}
+    else:
+        save_args = get_argdict(args.save_args)
+    
+    if fname_pref == None:
+        fname_pref = f'{ds}'
+    plot.save(os.path.join(args.out, fname_pref), suffix=args.ext,
+            mpl_kwargs=save_args)
+
+    if args.even_dim:
+
+        dpi = save_args.setdefault('dpi', fig.get_dpi())
+        fw, fh = dpi * fig.get_size_inches()
+        fw = 2 * round(fw / 2)
+        fh = 2 * round(fh / 2)
+        if fw > (fw/dpi * dpi):
+            fw += fw - (fw/dpi * dpi)
+        if fh > (fh/dpi * dpi):
+            fh += fh - (fh/dpi * dpi)
+        fig.set_size_inches(fw/dpi, fh/dpi)
+
+        if args.proj:
+            plot_type = 'Projection'
+            normkey = 'axis'
+        else:
+            plot_type = 'Slice'
+            normkey = 'normal'
+
+        if isinstance(settings[normkey], str):
+            type_and_normal = f'{plot_type}_{settings[normkey]}'
+        else:
+            type_and_normal = f'OffAxis{plot_type}'
+
+        fname = f'{fname_pref}_{type_and_normal}_{field}.{args.ext}'
+        fpath = os.path.join(args.out, fname)
+        print(f"Resaving using matplotlib...")
+        fig.savefig(fpath, **save_args)
+
+    print()
+
+if not args.list_fields:
+    print("Generating...")
+
+for ds in ts:
+
+    ############################
+    # List fields if requested #
+    ############################
+
+    if args.list_fields:
+        print()
+        print(f"Fields list for {ds}:")
+        print(ds.field_list)
+        print()
+        continue
+
+    ##################
+    # Make base plot #
+    ##################
+    
+    # If we are only doing one zoom level, generate that plot and continue
+    if not (args.xseq or args.yseq):
+        make_plot(ds, args, args.xlim, args.ylim)
+        continue
+        
+    # Otherwise, generate zoom sequence with variable axis bounds
+    if args.xseq:
+        xseq = np.linspace(args.xseq[0], args.xseq[1], int((args.xseq[1] - args.xseq[0])/args.xseq[2]) + 1)
+    else:
+        xseq = 1.0
+    if args.yseq:
+        yseq = np.linspace(args.yseq[0], args.yseq[1], int((args.yseq[1] - args.yseq[0])/args.yseq[2]) + 1)
+    else:
+        yseq = 1.0
+        
+    xseq = np.outer(np.array(args.xlim), xseq).T
+    yseq = np.outer(np.array(args.ylim), yseq).T
+    
+    n = max(len(xseq), len(yseq))
+    for i in range(n):
+        ndigits = len(str(n))
+        base_pref = '{}_seq{:0%dd}' % ndigits
+        make_plot(ds, args, xseq[i % len(xseq)], yseq[i % len(yseq)], base_pref.format(ds, i))
+
+# plt.savefig(f'{args.out}/soundspeed_rays_log.png')
+
+print("Task completed.")

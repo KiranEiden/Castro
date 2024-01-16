@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
 import yt
+import sys
 import argparse
 import numpy as np
 import unyt as u
+from analysis_util import AMRData
 from yt.frontends.boxlib.data_structures import CastroDataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument('datafiles', nargs="*")
-parser.add_argument('-r', '--refinement', type=int, default=1)
+parser.add_argument('-l', '--level', type=int, default=0)
 parser.add_argument('-o', '--output', default="energy.dat")
 args = parser.parse_args()
     
@@ -41,35 +43,18 @@ def calc_1d(ds):
     
 def calc_2d(ds):
     
-    # slc = ds.slice(2, np.pi)
-    # nr, nz, _ = ds.domain_dimensions*args.refinement
-    # rlo, zlo, plo = ds.domain_left_edge
-    # rhi, zhi, plo = ds.domain_right_edge
-    # frb = yt.FixedResolutionBuffer(slc, (rlo, rhi, zlo, zhi), (nz, nr))
-    
-    # Make CoveringGrid object
-    nr, nz, _ = ds.domain_dimensions * args.refinement
-    rlo, zlo, plo = ds.domain_left_edge
-    rhi, zhi, _ = ds.domain_right_edge
-    # 0.0 * plo is to ensure correct units on the 0.0
-    cg = ds.covering_grid(ds.max_level, (rlo, zlo, 0.0*plo), (nr, nz, 1))
-    
-    def getd(cg, field, units=False):
-        
-        arr = cg[field].squeeze()
-        if units:
-            return arr
-        return arr.d
-    
-    r = getd(cg, 'r')
-    dr = (rhi - rlo).d / nr
-    dz = (zhi  - zlo).d / nz
+    # Make data object and retrieve data
+    ad = AMRData(ds, args.level, verbose=True)
+    r, z = ad.position_data(units=False)
+    dr, dz = ad.dds[:, args.level].d
     vol = np.pi * ((r+dr/2)**2 - (r-dr/2)**2) * dz
     
-    rhoE = getd(cg, 'rho_E')
-    rhoe = getd(cg, 'rho_e')
-    rho = getd(cg, 'density')
+    rhoE = ad['rho_E'].d
+    rhoe = ad['rho_e'].d
+    rho = ad['density'].d
 
+    # Calculate total energy, internal energy, and mass
+    print("Calculating derived quantities...")
     Etot = (rhoE * vol).sum()
     etot = (rhoe * vol).sum()
     Mtot = (rho * vol).sum()
@@ -90,3 +75,5 @@ with open(args.output, 'w') as datfile:
         Etot, etot, Mtot = eval(fstr)
         
         print(ds.current_time.d, Etot, etot, Mtot, file=datfile)
+        
+    print("Task completed.")

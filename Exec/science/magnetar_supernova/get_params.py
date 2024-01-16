@@ -19,9 +19,9 @@ parser.add_argument('-vw', type=float, default=10.0)
 parser.add_argument('-Rmax', type=float, default=1e14)
 parser.add_argument('-beta', type=float, default=3e-2)
 parser.add_argument('-t0', type=float, default=1e2)
+parser.add_argument('-tramp', type=float, default=0.05)
 parser.add_argument('-eps', type=float, default=1e-8)
-parser.add_argument('-tmfac', type=float, default=1.0)
-parser.add_argument('-Efac', type=float, default=1.0)
+parser.add_argument('-Pmag', type=float, default=1.0)
 parser.add_argument('-tmax', type=float, default=5.0)
 parser.add_argument('-fdep', type=float, default=0.05)
 parser.add_argument('-depscale', type=float, default=3.0)
@@ -30,6 +30,7 @@ parser.add_argument('-Mmag', type=float, default=1.256913)
 parser.add_argument('-mu', type=float, default=1e-2)
 parser.add_argument('-res', type=int, default=8192)
 parser.add_argument('-ni_mass', type=float, default=0.125)
+parser.add_argument('-o_mass', type=float, default=0.25)
 parser.add_argument('-blend_thresh', type=float, default=1e-30)
 
 args = parser.parse_args(sys.argv[1:])
@@ -47,9 +48,11 @@ Mdot = args.Mdot * u.Msun / u.yr
 v_w = args.vw * u.km / u.s
 R_max = args.Rmax * u.cm
 beta = args.beta
-t_0 = args.t0 * u.s
-t_m = args.tmfac * 2047.49866274 * u.s
-E_0 = args.Efac * 1.97392088e52 * u.erg
+P_mag = args.Pmag * u.ms
+t_m = (P_mag / (1*u.ms))**2 * 2047.49866274 * u.s
+E_0 = 1.97392088e52 * u.erg / ((P_mag / (1*u.ms))**2)
+t_0 = args.t0 * t_m
+t_ramp = args.tramp * t_m
 t_max = args.tmax * t_m
 f_dep = args.fdep
 depscale = args.depscale
@@ -60,7 +63,7 @@ res = args.res
 dr = R_max / res
 
 ni_mass = args.ni_mass
-o_mass = ni_mass * 3.
+o_mass = args.o_mass
 blend_thresh = args.blend_thresh
 
 delt = 1.0; f_r = 0.25
@@ -95,7 +98,7 @@ v_esc = ((4.0*u.G*M_mag/dr)**0.5).to(u.cm/u.s)
 E_K_inj = (0.5 * M_inj * v_esc**2).to(u.erg)
 M_mult = (mu*E_0 / E_K_inj).to(u.dimensionless)
 
-dep_cells = int((f_dep * r_0 * (depscale - 1.)) / dr + 0.5)
+dep_cells = int((f_dep * r_0 * depscale) / dr + 0.5)
 
 r_t = f_r * r_0
 r = (np.arange(res) + 0.5) * dr
@@ -109,10 +112,11 @@ M_enc = M_enc * u.Msun
 M_enc = M_enc / M_ej
 
 ni_cells = (M_enc < ni_mass).sum()
-o_cells = (M_enc < o_mass).sum() - ni_cells
+o_cells = (M_enc < (ni_mass + o_mass)).sum() - ni_cells
 blend_scale = -ni_mass / np.log(blend_thresh)
 
 print(f"{Fore.BLUE}t_max{Style.RESET_ALL}: {Fore.GREEN}{t_max.d}{Style.RESET_ALL}")
+print(f"{Fore.BLUE}t_ramp{Style.RESET_ALL}: {Fore.GREEN}{t_ramp.d}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}f_r{Style.RESET_ALL}: {Fore.GREEN}{f_r.d}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}1/f_r{Style.RESET_ALL}: {Fore.GREEN}{1./f_r.d}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}r_0{Style.RESET_ALL}: {Fore.GREEN}{r_0.to(u.cm):.15e}{Style.RESET_ALL}")
