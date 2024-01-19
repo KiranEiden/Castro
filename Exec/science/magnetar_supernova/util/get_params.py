@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import sys
 import argparse
 import unyt as u
@@ -23,15 +24,20 @@ parser.add_argument('-tramp', type=float, default=0.05)
 parser.add_argument('-eps', type=float, default=1e-8)
 parser.add_argument('-Pmag', type=float, default=1.0)
 parser.add_argument('-tmax', type=float, default=5.0)
-parser.add_argument('-fdep', type=float, default=0.05)
-parser.add_argument('-depscale', type=float, default=3.0)
-parser.add_argument('-chi', type=float, default=1e-2)
-parser.add_argument('-Mmag', type=float, default=1.256913)
-parser.add_argument('-mu', type=float, default=1e-2)
+parser.add_argument('-fdep', type=float, default=0.03)
+parser.add_argument('-depscale', type=float, default=2.0)
+parser.add_argument('-chi', type=float, default=1e-3)
+parser.add_argument('-Mmag', type=float, default=1.25728227)
+parser.add_argument('-mu', type=float, default=1e-3)
 parser.add_argument('-res', type=int, default=8192)
 parser.add_argument('-ni_mass', type=float, default=0.125)
 parser.add_argument('-o_mass', type=float, default=0.25)
 parser.add_argument('-blend_thresh', type=float, default=1e-30)
+parser.add_argument('-ref_ratio', type=int, default=64)
+parser.add_argument('-plot_per', type=float, default=0.25)
+parser.add_argument('-small_plot_per', type=float, default=0.01)
+parser.add_argument('-out')
+parser.add_argument('-template', default="inputs.2d.template")
 
 args = parser.parse_args(sys.argv[1:])
 print("Arguments are:")
@@ -65,6 +71,13 @@ dr = R_max / res
 ni_mass = args.ni_mass
 o_mass = args.o_mass
 blend_thresh = args.blend_thresh
+
+base_res_r = res // args.ref_ratio
+base_res_z = 2 * base_res_r
+assert res % base_res_r == 0
+
+plot_per = args.plot_per * t_m
+small_plot_per = args.small_plot_per * t_m
 
 delt = 1.0; f_r = 0.25
 
@@ -134,3 +147,45 @@ print(f"{Fore.BLUE}dep_cells{Style.RESET_ALL}: {Fore.GREEN}{dep_cells}{Style.RES
 print(f"{Fore.BLUE}ni_cells{Style.RESET_ALL}: {Fore.GREEN}{ni_cells}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}o_cells{Style.RESET_ALL}: {Fore.GREEN}{o_cells}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}blend_scale{Style.RESET_ALL}: {Fore.GREEN}{blend_scale:.15e}{Style.RESET_ALL}")
+    
+def stringify(num, n=4, imin=4, smallexp=3):
+    
+    if isinstance(num, int):
+        return str(num)
+    
+    # Round if there is a string of 'n' zeros or 'n' nines
+    string = f"{num:.18e}"
+    exp = float(string[string.find('e')+1:])
+    
+    i = string.find("0"*n, imin)
+    j = string.find("9"*n, imin)
+    k = max(i, j)
+    
+    if k < imin:
+        k = 17
+    
+    if np.abs(exp) <= smallexp:
+        return str(np.round(num, k-2))
+    else:
+        fstr = "{:.%ie}" % (k-2)
+        return fstr.format(num)
+
+def repl(match):
+    val = globals()[match['var']]
+    if not isinstance(val, u.unyt_quantity):
+        return stringify(val)
+    if match['unit'] is None:
+        val = val.in_cgs()
+    else:
+        val = val.to(match['unit'])
+    return stringify(val.d)
+
+if args.out:
+    
+    with open(args.template, 'r') as f:
+        contents = f.read()
+    pat = re.compile('&!(?P<var>\w+)(?:\{(?P<unit>[\w/]+)\})?')
+    new_contents = pat.sub(repl, contents)
+    
+    with open(args.out, 'w') as f:
+        f.write(new_contents)
