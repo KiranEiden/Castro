@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-import yt
 import sys
 import argparse
 import numpy as np
 import unyt as u
 import matplotlib.pyplot as plt
-from analysis_util import AMRData
+import analysis_util as au
 
 parser = argparse.ArgumentParser()
 parser.add_argument('datafiles', nargs="*")
@@ -21,17 +20,16 @@ if len(ts) < 1:
 
 print("Will load the following files: {}\n".format(ts))
 
-tf = lambda file: yt.load(file.rstrip('/'), hint='CastroDataset')
-ts = map(tf, ts)
+ts = au.FileLoader(ts)
     
 def calc_2d(ds):
     
     # Make data object and retrieve data
-    ad = AMRData(ds, args.level, verbose=True)
-    r, z = ad.position_data()
+    ad = au.AMRData(ds, args.level)
+    r, z = ad.position_data(units=False)
     field_data = dict()
     for field in args.fields:
-        field_data[field] = ad[field]
+        field_data[field] = ad[field].d
     
     # Write data to file
     if not args.output:

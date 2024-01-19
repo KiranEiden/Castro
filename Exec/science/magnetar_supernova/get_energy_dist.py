@@ -3,12 +3,11 @@
 import yt
 import sys
 import argparse
+import tempfile
 import numpy as np
 import unyt as u
 import matplotlib.pyplot as plt
-from scipy.interpolate import RegularGridInterpolator
-from analysis_util import AMRData
-from yt.frontends.boxlib.data_structures import CastroDataset
+import analysis_util as au
 
 parser = argparse.ArgumentParser()
 parser.add_argument('datafiles', nargs="*")
@@ -18,38 +17,30 @@ parser.add_argument('-t', '--thresh', type=float, default=7.5e3)
 parser.add_argument('--plot_cs_prof', action='store_true')
 parser.add_argument('--plot_mask', action='store_true')
 parser.add_argument('--plot_M_of_v', action='store_true')
+parser.add_argument('--use_mpi', action='store_true')
 parser.add_argument('-o', '--output', default="energy.dat")
 args = parser.parse_args()
+
+if args.use_mpi:
+    MPI = au.mpi_importer()
+is_main_proc = (not args.use_mpi) or (MPI.COMM_WORLD.Get_rank() == 0)
+
+au.settings['verbose'] = True
 
 ts = args.datafiles
 if len(ts) < 1:
     sys.exit("No files were available to be loaded.")
 
-print("Will load the following files: {}\n".format(ts))
+if is_main_proc:
+    print("Will load the following files: {}\n".format(ts))
 
-tf = lambda file: CastroDataset(file.rstrip('/'))
-ts = map(tf, ts)
+ts = au.FileLoader(ts, args.use_mpi)
 
-def do_plot_cs_prof(r, z, cs):
+def do_plot_cs_prof(ds, r, z, cs):
     
-    print(f"Plotting soundspeed profile for {ds}.")
+    print(f"Plotting soundspeed profile for {ds}...")
     
-    # Get 1d list of r values
-    r1d = r[:,0]
-    
-    # Fixed resolution rays don't work in 2d with my yt version
-    interp = RegularGridInterpolator((r1d, z[0]), cs/cs.min(), bounds_error=False, fill_value=None)
-    theta = np.linspace(0.0, np.pi, num=100)
-    xi = np.column_stack((np.sin(theta), np.cos(theta)))
-    
-    avg = np.empty_like(r1d)
-    mxm = np.empty_like(r1d)
-    mnm = np.empty_like(r1d)
-    for i in range(len(r1d)):
-        pts = interp(r1d[i] * xi)
-        avg[i] = pts.mean()
-        mxm[i] = pts.max()
-        mnm[i] = pts.min()
+    avg, mxm, mnm, r1d = au.get_avg_prof_2d(ds, 100, r, z, cs/cs.min(), return_minmax=True, return_r=True)
         
     plt.plot(r1d, avg, label=r"$\langle c_s \rangle_{\theta}$")
     plt.plot(r1d, mxm, linestyle="-.", label=r"$\mathrm{max}_{\theta}(c_s)$")
@@ -67,7 +58,7 @@ def do_plot_cs_prof(r, z, cs):
     
 def do_plot_mask(r, z, mask):
     
-    print(f"Plotting mask for {ds}.")
+    print(f"Plotting mask for {ds}...")
     plt.scatter(r[mask], z[mask], s=0.5)
     plt.xlabel('r [cm]')
     plt.ylabel('z [cm]')
@@ -78,7 +69,7 @@ def do_plot_mask(r, z, mask):
     
 def do_plot_M_of_v(ds):
     
-    print(f"Plotting M(v) for {ds}.")
+    print(f"Plotting M(v) for {ds}...")
     plot = yt.ProfilePlot(ds, ('boxlib', 'magvel'), [('gas', 'mass')], weight_field=None)
     plot.save()
     
@@ -87,7 +78,7 @@ def calc_2d(ds):
     do_mask = not args.no_dist
     
     # Make data object and retrieve position data
-    ad = AMRData(ds, args.level, verbose=True)
+    ad = au.AMRData(ds, args.level)
     r, z = ad.position_data(units=False)
     dr, dz = ad.dds[:, args.level].d
     vol = np.pi * ((r+dr/2)**2 - (r-dr/2)**2) * dz
@@ -100,7 +91,7 @@ def calc_2d(ds):
         cs = ad['soundspeed'].d
     
     if args.plot_cs_prof:
-        do_plot_cs_prof(r, z, cs)
+        do_plot_cs_prof(ds, r, z, cs)
         
     """
     x = plt.imshow((cs / cs.min()) - 1.15e4, cmap="seismic", vmin=-2.5e5, vmax=2.5e5)
@@ -136,29 +127,61 @@ def calc_2d(ds):
         Mtot = (rho * vol).sum()
         
         return Etot, etot, Mtot
-
-with open(args.output, 'w') as datfile:
+        
+def main_serial():
     
-    print(f"Data file: {args.output}.")
-    print()
+    with open(args.output, 'w') as datfile:
+        
+        if args.no_dist:
+            
+            print('#', 't', 'E', 'e', 'M', file=datfile)
+            print('#', 's', 'erg', 'erg', 'g', file=datfile)
+            
+        else:
+            
+            print('#', 't', 'E_of', 'E_ej', 'e_of', 'e_ej', 'M_of', 'M_ej', file=datfile)
+            print('#', 's', 'erg', 'erg', 'erg', 'erg', 'g', 'g', file=datfile)
+            
+        for ds in ts:
+            
+            n = ds.dimensionality
+            fstr = f"calc_{n}d(ds)"
+            vals = eval(fstr)
+            
+            print(ds.current_time.d, *vals, file=datfile)
+            
+def main_parallel():
     
-    if args.no_dist:
-        
-        print('t', 'E', 'e', 'M', file=datfile)
-        print('s', 'erg', 'erg', 'g', file=datfile)
-        
-    else:
-        
-        print('t', 'E_of', 'E_ej', 'e_of', 'e_ej', 'M_of', 'M_ej', file=datfile)
-        print('s', 'erg', 'erg', 'erg', 'erg', 'g', 'g', file=datfile)
-        
-
-    for ds in ts:
+    nfields = 4 if args.no_dist else 7
+    outputs = np.zeros((len(ts), nfields), dtype=np.float64)
+    
+    for i, ds in ts.parallel_enumerator():
         
         n = ds.dimensionality
         fstr = f"calc_{n}d(ds)"
         vals = eval(fstr)
         
-        print(ds.current_time.d, *vals, file=datfile)
+        outputs[i, 0] = ds.current_time.d
+        outputs[i, 1:] = vals
         
+    MPI.COMM_WORLD.Reduce(MPI.IN_PLACE, [outputs, MPI.DOUBLE], op=MPI.SUM)
+    
+    if is_main_proc:
+        if args.no_dist:
+            header = """t E e M\ns erg erg g"""
+        else:
+            header = """t E_of E_ej e_of e_ej M_of M_ej\ns erg erg erg erg g g"""
+            
+        np.savetxt(args.output, outputs, header=header)
+
+if is_main_proc:
+    print(f"Data file: {args.output}.")
+    print()
+
+if args.use_mpi:
+    main_parallel()
+else:
+    main_serial()
+
+if is_main_proc:
     print("Task completed.")

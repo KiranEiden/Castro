@@ -3,7 +3,11 @@
 import yt
 import matplotlib.pyplot as plt
 import unyt as u
-from yt.frontends.boxlib.data_structures import CastroDataset
+
+try:
+    import analysis_util as au
+except ImportError:
+    print("Warning: failed to import analysis_util module; cannot use MPI.")
 
 import os
 import sys
@@ -68,6 +72,8 @@ even_dim_help = """Adjust the image size in pixels in each dimension to the near
         At the time of writing, using this option necessitates saving the figure directly with the
         matplotlib interface, as yt resets the figure size at some point during the plot.save() call."""
 Pmag_help = "Magnetar period (in ms) to use for setting the magnetar timescale. Assumes B = 10^{15} Gauss."
+use_mpi_help = """Whether to parallelize with MPI or not, assuming script was run with MPI. Requires
+        analysis_util module to be present."""
 
 #########################
 # Argument parser setup #
@@ -108,8 +114,13 @@ parser.add_argument('--window_size', type=float, default=8.0, help=window_size_h
 parser.add_argument('--aspect', type=float, default=None, help=aspect_help)
 parser.add_argument('--even_dim', action='store_true', help=even_dim_help)
 parser.add_argument('--Pmag', type=float, default=1.0, help=Pmag_help)
+parser.add_argument('--use_mpi', action='store_true', help=use_mpi_help)
 
-args = parser.parse_args(sys.argv[1:])
+args = parser.parse_args()
+
+if args.use_mpi:
+    MPI = au.mpi_importer()
+is_main_proc = (not args.use_mpi) or (MPI.COMM_WORLD.Get_rank() == 0)
 
 ##############################
 # Process argparse arguments #
@@ -193,10 +204,11 @@ if args.contour is not None:
 # Make output directory #
 #########################
 
-if not args.out:
-    args.out = os.getcwd()
-if not os.path.exists(args.out):
-    os.makedirs(args.out)
+if is_main_proc:
+    if not args.out:
+        args.out = os.getcwd()
+    if not os.path.exists(args.out):
+        os.makedirs(args.out)
 
 #######################
 # Sort and load files #
@@ -216,10 +228,15 @@ else:
     key = lambda fname: fname[start:start + nchars]
 ts.sort(key=key, reverse=desc)
 
-print("Will load the following files: {}\n".format(ts))
+if is_main_proc:
+    print("Will load the following files: {}\n".format(ts))
 
-tf = lambda file: CastroDataset(file.rstrip('/'))   
-ts = map(tf, ts)
+if args.use_mpi:
+    ts = au.FileLoader(ts, True)
+    MPI.COMM_WORLD.Barrier()
+else:
+    tf = lambda file: yt.load(file.rstrip('/'), hint='CastroDataset')   
+    ts = map(tf, ts)
 
 #############################
 # Prepare to generate plots #
@@ -296,15 +313,6 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
     # del settings['center']
     # del settings['width']
     plot = plotfunc(ds, fields=field, **settings)
-    
-    # ~ ray = ds.ortho_ray(0, (0, 0))
-    # ~ idx = np.argsort(ray['r'].d)
-    # ~ t_hr = ds.current_time.to('hr').d
-    # ~ plt.plot(ray['r'].d[idx], ray['soundspeed'].d[idx], label=f't = {t_hr:.2f} h')
-    # ~ plt.xlabel(r'$r$ [cm]')
-    # ~ plt.ylabel(r'$c_s$ [cm/s]')
-    # ~ plt.yscale("log")
-    # ~ plt.legend()
 
     #######################################
     # Additional settings and annotations #
@@ -431,7 +439,7 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
 
     print()
 
-if not args.list_fields:
+if not args.list_fields and is_main_proc:
     print("Generating...")
 
 for ds in ts:
@@ -475,6 +483,8 @@ for ds in ts:
         base_pref = '{}_seq{:0%dd}' % ndigits
         make_plot(ds, args, xseq[i % len(xseq)], yseq[i % len(yseq)], base_pref.format(ds, i))
 
-# plt.savefig(f'{args.out}/soundspeed_rays_log.png')
-
-print("Task completed.")
+if args.use_mpi:
+    MPI.COMM_WORLD.Barrier()
+    
+if is_main_proc:
+    print("Task completed.")

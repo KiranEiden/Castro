@@ -5,7 +5,7 @@ import sys
 import argparse
 import numpy as np
 import unyt as u
-from analysis_util import AMRData
+import analysis_util as au
 from yt.frontends.boxlib.data_structures import CastroDataset
 
 parser = argparse.ArgumentParser()
@@ -13,6 +13,8 @@ parser.add_argument('datafiles', nargs="*")
 parser.add_argument('-l', '--level', type=int, default=0)
 parser.add_argument('-o', '--output', default="energy.dat")
 args = parser.parse_args()
+
+au.settings['verbose'] = True
     
 ts = args.datafiles
 if len(ts) < 1:
@@ -44,7 +46,7 @@ def calc_1d(ds):
 def calc_2d(ds):
     
     # Make data object and retrieve data
-    ad = AMRData(ds, args.level, verbose=True)
+    ad = au.AMRData(ds, args.level)
     r, z = ad.position_data(units=False)
     dr, dz = ad.dds[:, args.level].d
     vol = np.pi * ((r+dr/2)**2 - (r-dr/2)**2) * dz
@@ -65,8 +67,8 @@ with open(args.output, 'w') as datfile:
     
     print(f"Data file: {args.output}.")
     
-    print('t', 'E', 'e', 'M', file=datfile)
-    print('s', 'erg', 'erg', 'g', file=datfile)
+    print('#', 't', 'E', 'e', 'M', file=datfile)
+    print('#', 's', 'erg', 'erg', 'g', file=datfile)
 
     for ds in ts:
         
