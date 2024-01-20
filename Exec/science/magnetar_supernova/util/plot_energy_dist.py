@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument('datafiles', nargs="*")
-parser.add_argument("--P_0", nargs=1, type=float)
-parser.add_argument("--t_ramp", nargs=1, type=float)
-parser.add_argument("--E_sn", nargs=1)
+parser.add_argument("--P_0", nargs="*", type=float)
+parser.add_argument("--t_ramp", nargs="*", type=float)
+parser.add_argument("--E_sn")
 args = parser.parse_args()
 
 prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -48,7 +48,12 @@ for i, f in enumerate(args.datafiles):
     
     t_m = 2047.49866274 * P_0**2
     E_0 = 1.97392088e+52 / P_0**2
-    frac_emit = np.log(t_ramp + 1.) / t_ramp - 1. / (t/t_m + 1.)
+    
+    frac_emit = np.empty_like(t)
+    mask = t < t_m*t_ramp
+    frac_emit[mask] = np.log(t[mask]/t_m + 1.) / t_ramp - t[mask]/(t_ramp * t_m * (t_ramp + 1.))
+    frac_emit[~mask] = np.log(t_ramp + 1.) / t_ramp - 1. / (t[~mask]/t_m + 1.)
+    
     E_emit = frac_emit*E_0
     E_tot = E_emit + args.E_sn
     

@@ -56,7 +56,7 @@ def do_plot_cs_prof(ds, r, z, cs):
     plt.savefig(f'cs_prof_{ds}.png')
     plt.gcf().clear()
     
-def do_plot_mask(r, z, mask):
+def do_plot_mask(ds, r, z, mask):
     
     print(f"Plotting mask for {ds}...")
     plt.scatter(r[mask], z[mask], s=0.5)
@@ -104,7 +104,7 @@ def calc_2d(ds):
         ej_mask = ~of_mask
 
     if args.plot_mask:
-        do_plot_mask(r, z, of_mask)
+        do_plot_mask(ds, r, z, of_mask)
         
     if args.plot_M_of_v:
         do_plot_M_of_v(ds)
