@@ -186,21 +186,21 @@ void problem_initialize_state_data (int i, int j, int k,
   if(M_enc_frac > 0.375_rt)
   {
       state(i,j,k,UFS) = 1.0_rt*rho;
-      blend_fac = exp((0.2_rt - M_enc_frac) / blend_scale);
+      blend_fac = exp((0.375_rt - M_enc_frac) / blend_scale);
       state(i,j,k,UFS+1) = blend_fac*rho;
   }
   else if(M_enc_frac > 0.125_rt)
   {
       state(i,j,k,UFS+1) = 1.0_rt*rho;
-      blend_fac = exp((M_enc_frac - 0.2_rt) / blend_scale);
+      blend_fac = exp((M_enc_frac - 0.375_rt) / blend_scale);
       state(i,j,k,UFS) = blend_fac*rho;
-      blend_fac = exp((0.1_rt - M_enc_frac) / blend_scale);
+      blend_fac = exp((0.125_rt - M_enc_frac) / blend_scale);
       state(i,j,k,UFS+2) = blend_fac*rho;
   }
   else
   {
       state(i,j,k,UFS+2) = 1.0_rt*rho;
-      blend_fac = exp((M_enc_frac - 0.1_rt) / blend_scale);
+      blend_fac = exp((M_enc_frac - 0.125_rt) / blend_scale);
       state(i,j,k,UFS+1) = blend_fac*rho;
   }
 
