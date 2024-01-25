@@ -51,7 +51,7 @@ for i, f in enumerate(args.datafiles):
     
     frac_emit = np.empty_like(t)
     mask = t < t_m*t_ramp
-    frac_emit[mask] = np.log(t[mask]/t_m + 1.) / t_ramp - t[mask]/(t_ramp * t_m * (t_ramp + 1.))
+    frac_emit[mask] = np.log(t[mask]/t_m + 1.) / t_ramp - t[mask]/(t_ramp * (t[mask] + t_m))
     frac_emit[~mask] = np.log(t_ramp + 1.) / t_ramp - 1. / (t[~mask]/t_m + 1.)
     
     E_emit = frac_emit*E_0
@@ -64,9 +64,9 @@ for i, f in enumerate(args.datafiles):
             print("Total energy differs from theoretical value by more than 0.1%." +
                     f" Ratio E_sim/E_theory is {E_rat}.")
         else:
-            i = np.argmax(delt)
+            j = np.argmax(delt)
             print("Total energy differs from theoretical value by more than 0.1%." +
-                    f" Maximum difference is {delt[i]} at t = {t[i]}.")
+                    f" Maximum difference is {delt[j]} at t = {t[j]}.")
 
     plt.scatter(t/t_m, E_ej/E_tot, label=r"$E_{\mathrm{ej}}$" + f" ({P_0} ms)", marker=".", color=colors[i])
     plt.scatter(t/t_m, 1. - E_ej/E_tot, label=r"$E_{\mathrm{of}}$" + f" ({P_0} ms)", marker="^", color=colors[i])
