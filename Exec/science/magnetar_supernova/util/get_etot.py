@@ -6,7 +6,6 @@ import argparse
 import numpy as np
 import unyt as u
 import analysis_util as au
-from yt.frontends.boxlib.data_structures import CastroDataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument('datafiles', nargs="*")
@@ -22,7 +21,7 @@ if len(ts) < 1:
 
 print("Will load the following files: {}\n".format(ts))
 
-tf = lambda file: CastroDataset(file.rstrip('/'))
+tf = lambda file: yt.load(file.rstrip('/'), hint='CastroDataset')
 ts = map(tf, ts)
 
 def calc_1d(ds):

@@ -20,7 +20,7 @@ if not args.datafiles:
 assert args.datafiles, "No energy data files available to plot."
 
 if not args.P_0:
-    args.P_0 = [float(f.split("_")[1].split(".")[0][:-2]) for f in files]
+    args.P_0 = [float(f.split("_")[1].split(".")[0][:-2]) for f in args.datafiles]
 elif len(args.P_0) == 1:
     args.P_0 = args.P_0 * len(args.datafiles)
 else:
