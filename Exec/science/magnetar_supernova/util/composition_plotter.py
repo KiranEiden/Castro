@@ -12,7 +12,9 @@ mpl_colors = prop_cycle.by_key()['color']
 parser = argparse.ArgumentParser()
 parser.add_argument('datafiles', nargs="*")
 parser.add_argument('-l', '--level', type=int, default=0)
-parser.add_argument('--plot_avg_prof', action='store_true')
+parser.add_argument('--plot_avg_prof', nargs='*', default=None)
+parser.add_argument('-x', '--xlim', nargs=2, type=float)
+parser.add_argument('-y', '--ylim', nargs=2, type=float)
 parser.add_argument('--use_mpi', action='store_true')
 args = parser.parse_args()
 
@@ -28,6 +30,40 @@ if is_main_proc:
     print("Will load the following files: {}\n".format(ts))
 
 ts = au.FileLoader(ts, args.use_mpi)
+
+def safe_convert(string_val):
+    """
+    Convert string value to an int or float if possible, and return it if not.
+    Can also convert comma-separated lists of these types.
+    """
+
+    values = string_val.split(',')
+
+    for i in range(len(values)):
+
+        try:
+            values[i] = int(values[i])
+        except ValueError:
+            pass
+
+        try:
+            values[i] = float(values[i])
+        except ValueError:
+            pass
+
+    if len(values) == 1:
+        values = values[0]
+    return values
+
+def get_argdict(arglist):
+    """
+    Converts whitespace-delimited list of key-value pairs into dictionary. Can handle numeric
+    and list values.
+    """
+
+    pairs = map(lambda s: s.split(':'), arglist)
+    pairs = ((k, safe_convert(v)) for k, v in pairs)
+    return dict(pairs)
 
 def to_color(x, idx, small, logmin, logrange):
     
@@ -74,6 +110,21 @@ for ds in ts:
     X_H = ad['X(H1)'].d
     X_O = ad['X(O16)'].d
     X_Ni = ad['X(Ni56)'].d
+    
+    if args.xlim or args.ylim:
+        if not args.xlim:
+            args.xlim = ad.left_edge[0], ad.right_edge[0]
+        if not args.ylim:
+            args.ylim = ad.left_edge[1], ad.right_edge[1]
+            
+        idx, _ = ad.region_idx(*args.xlim, *args.ylim)
+        make_slc = lambda arr: arr[slice(*idx[0]), slice(*idx[1])]
+        
+        r = make_slc(r)
+        z = make_slc(z)
+        X_H = make_slc(X_H)
+        X_O = make_slc(X_O)
+        X_Ni = make_slc(X_Ni)
 
     small = np.array([1e-6, 1e-6, 1e-6])
     large = np.array([1.0, 1.0, 1.0])
@@ -93,7 +144,12 @@ for ds in ts:
     plt.savefig(f"composition_{ds}.png")
     plt.gcf().clear()
     
-    if args.plot_avg_prof:
+    if args.plot_avg_prof is not None:
+        
+        if args.plot_avg_prof:
+            opt = get_argdict(args.plot_avg_prof)
+        else:
+            opt = dict()
         
         H_prof = au.get_avg_prof_2d(ds, 100, r, z, X_H)
         O_prof = au.get_avg_prof_2d(ds, 100, r, z, X_O)
@@ -105,6 +161,8 @@ for ds in ts:
         
         plt.xlabel(r"$\sqrt{r^2 + z^2}$ [cm]")
         plt.ylabel(r"X")
+        if opt.get("xlog", False):
+            plt.xscale("log")
         plt.yscale("log")
         plt.legend()
         

@@ -117,9 +117,9 @@ class AMRData:
         
         self.ds = ds
         self.dim = ds.dimensionality
-        self.def_level = def_level
         self.grids = list(ds.index.get_levels())
         self.nlevels = len(self.grids)
+        self.def_level = self._level_check(def_level)
         
         self.left_edge = u.unyt_array(ds.domain_left_edge[:self.dim].d, ds.length_unit)
         self.right_edge = u.unyt_array(ds.domain_right_edge[:self.dim].d, ds.length_unit)
@@ -140,14 +140,27 @@ class AMRData:
         return self.field_data(field)
         
         
+    def _level_check(self, level):
+        
+        if level is None:
+            level = self.def_level
+        if (level < 0) or (level >= self.nlevels):
+            raise ValueError(f"Level number must be in range [0, {self.nlevels-1}]")
+        return level
+        
+    def _unytq_conv(self, val, to):
+        
+        if isinstance(val, u.unyt_quantity):
+            return val.to(to).d
+        else:
+            return val
+        
     def position_data(self, level=None, units=True):
         
         if settings['verbose']:
             print(f"Retrieving position data for {self.ds}...")
+        level = self._level_check(level)
         
-        if level is None:
-            level = self.def_level
-            
         ind = np.indices(self.ncells[:, level])
         
         # Using a generator appears to be more efficient than a single NumPy calculation
@@ -164,11 +177,7 @@ class AMRData:
         
         if settings['verbose']:
             print(f"Retrieving {field} data for {self.ds}...")
-        
-        if level is None:
-            level = self.def_level
-        if (level < 0) or (level >= self.nlevels):
-            raise ValueError(f"Level number must be between 0 and {self.nlevels}")
+        level = self._level_check(level)
             
         data = np.empty(self.ncells[:, level])
         block_idx_tab = dict()
@@ -202,6 +211,23 @@ class AMRData:
         if units:
             return u.unyt_array(data, grid_data.units)
         return data
+        
+    def region_idx(self, *bounds, level=None):
+        
+        level = self._level_check(level)
+        bounds = [self._unytq_conv(b, self.ds.length_unit) for b in bounds]
+        bounds = np.array(bounds, dtype=np.float64).reshape((self.dim, 2)) * self.ds.length_unit
+        idx = np.empty((self.dim, 2), dtype=np.int32)
+        
+        for d in range(self.dim):
+            
+            dd = self.dds[d, level]
+            lo = self.left_edge[d]
+            
+            idx[d] = np.rint((bounds[d] - lo) / dd - 0.5).astype(np.int32)
+            bounds[d] = (idx[d] + 0.5) * dd + lo
+            
+        return idx, bounds
         
 ########################
 # Additional Functions #
