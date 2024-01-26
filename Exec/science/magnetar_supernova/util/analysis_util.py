@@ -289,33 +289,55 @@ def plot_prof_2d(ds, nrays, fields, styles=None, savefile=None, **kwargs):
     if savefile is not None:
         plt.savefig(savefile)
         
+        
+def get_avg_prof_2d(ds, nrays=100, r=None, z=None, data=None, **kwargs):
     
-def get_avg_prof_2d(ds, nrays=100, r=None, z=None, data=None, field=None, level=0,
-        ang_range=(0.0, np.pi), return_minmax=False, return_r=False):
+    # Process kwargs
+    field = kwargs.get("field", None)
+    level = kwargs.get("level", 0)
+    weight_field = kwargs.get("weight_field", None)
+    weight_data = kwargs.get("weight_data", None)
+    ang_range = kwargs.get("ang_range", (0.0, np.pi))
+    return_minmax = kwargs.get("return_minmax", False)
+    return_r = kwargs.get("return_r", False)
     
     if settings['verbose'] and (field is not None):
         print(f"Getting angle-averaged {field} profile for {ds}...")
         
-    if (r is None) or (z is None) or (data is None):
+    get_weight_field = (weight_field is not None) and (weight_data is None)
+        
+    if (r is None) or (z is None) or (data is None) or get_weight_field:
         ad = AMRData(ds, level)
         if (r is None) or (z is None):
             r, z = ad.position_data(units=False)
         if data is None:
             data = ad.field_data(field, units=False)
-        
+        if get_weight_field:
+            weight_data = ad.field_data(weight_field, units=False)
+            
     if isinstance(r, u.unyt_array):
         r = r.d
     if isinstance(z, u.unyt_array):
         z = z.d
     if isinstance(data, u.unyt_array):
         data = data.d
+    if isinstance(weight_data, u.unyt_array):
+        weight_data = weight_data.d
+        
+    theta = np.linspace(*ang_range, num=nrays)
+        
+    if weight_data is not None:
+        _weighted_avg_prof_2d_helper(theta, r, z, data, weight_data, return_minmax, return_r)
+    return _avg_prof_2d_helper(theta, r, z, data, return_minmax, return_r)
+    
+    
+def _avg_prof_2d_helper(theta, r, z, data, return_minmax, return_r):
     
     # Get 1d list of r values
     r1d = r[:,0]
     
     # Fixed resolution rays don't work in 2d with my yt version
     interp = RegularGridInterpolator((r1d, z[0]), data, bounds_error=False, fill_value=None)
-    theta = np.linspace(*ang_range, num=nrays)
     xi = np.column_stack((np.sin(theta), np.cos(theta)))
     
     if return_minmax:
@@ -333,6 +355,46 @@ def get_avg_prof_2d(ds, nrays=100, r=None, z=None, data=None, field=None, level=
         mxm = np.empty_like(r1d)
     for i in range(len(r1d)):
         pts = interp(r1d[i] * xi)
+        update()
+        
+    if not (return_minmax or return_r):
+        return avg
+        
+    return_items = (avg,)
+    if return_minmax:
+        return_items += (mnm, mxm)
+    if return_r:
+        return_items += (r1d,)
+    return return_items
+    
+    
+def _weighted_avg_prof_2d_helper(theta, r, z, data, weight_data, return_minmax, return_r):
+    
+    # Get 1d list of r values
+    r1d = r[:,0]
+    
+    # Fixed resolution rays don't work in 2d with my yt version
+    interp = RegularGridInterpolator((r1d, z[0]), data, bounds_error=False, fill_value=None)
+    weight_interp = RegularGridInterpolator((r1d, z[0]), weight_data, bounds_error=False, fill_value=None)
+    xi = np.column_stack((np.sin(theta), np.cos(theta)))
+    
+    if return_minmax:
+        def update():
+            avg[i] = (pts*weights).sum() / weights.sum()
+            mnm[i] = pts.min()
+            mxm[i] = pts.max()
+    else:
+        def update():
+            avg[i] = (pts*weights).sum() / weights.sum()
+    
+    avg = np.empty_like(r1d)
+    if return_minmax:
+        mnm = np.empty_like(r1d)
+        mxm = np.empty_like(r1d)
+    for i in range(len(r1d)):
+        loc = r1d[i] * xi
+        pts = interp(loc)
+        weights = weight_interp(loc)
         update()
         
     if not (return_minmax or return_r):
