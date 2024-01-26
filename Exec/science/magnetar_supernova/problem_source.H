@@ -150,7 +150,7 @@ void problem_source (int i, int j, int k,
     src(i,j,k,UEDEN) += 0.5_rt * drho_dt * v*v;
 
     // Inject mass as last species
-    // src(i,j,k,UFS+NumSpec-1) += drho_dt;
+    src(i,j,k,UFS+NumSpec-1) += drho_dt;
 #endif
 }
 
