@@ -268,11 +268,16 @@ def plot_prof_2d(ds, nrays, fields, styles=None, savefile=None, **kwargs):
     xlog = kwargs.pop("xlog", False)
     ylog = kwargs.pop("ylog", False)
     log = kwargs.pop("log", False)
+    t0 = kwargs.pop("t0", None)
     
     for i, field in enumerate(fields):
         color_iter = iter(mpl_colors)
         for r, th, data in get_prof_2d(ds, nrays, field, **kwargs):
-            plt.plot(r, data, label=f"θ = {th*180/np.pi}°",
+            if Pmag is not None:
+                x = r / (ds.current_time.d + t0)
+            else:
+                x = r
+            plt.plot(x, data, label=f"θ = {th*180/np.pi}°",
                     linestyle=styles[i], color=next(color_iter))
     
     plt.xlabel(r"$\sqrt{r^2 + z^2}$ [cm]")

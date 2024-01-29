@@ -16,6 +16,7 @@ parser.add_argument('datafiles', nargs="*")
 parser.add_argument('-l', '--level', type=int, default=0)
 parser.add_argument('--no_avg', action='store_true')
 parser.add_argument("--nplot", nargs=1, type=int)
+parser.add_argument('-t0', "--time_offset", type=float)
 args = parser.parse_args()
 
 if args.nplot is None:
@@ -36,9 +37,16 @@ def plot_avg_vel_prof(ds):
     
     avg, r1d = au.get_avg_prof_2d(ds, args.nplot, field='magvel', level=args.level, return_r=True)
     
-    plt.plot(r1d, avg)
+    if args.time_offset is not None:
+        x = r1d / (ds.current_time.d + args.time_offset)
+        xlabel = r"$R/t$ [cm/s]"
+    elif args.time_offset is not None:
+        x = r1d
+        xlabel = r"$R$ [cm]"
     
-    plt.xlabel(r"$\sqrt{r^2 + z^2}$ [cm]")
+    plt.plot(x, avg)
+    
+    plt.xlabel(xlabel)
     plt.ylabel(r"$\bar{v}$ [cm/s]")
     plt.xscale("log")
     plt.yscale("log")

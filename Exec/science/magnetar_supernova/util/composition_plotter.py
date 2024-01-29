@@ -15,6 +15,7 @@ parser.add_argument('-l', '--level', type=int, default=0)
 parser.add_argument('--plot_avg_prof', nargs='*', default=None)
 parser.add_argument('-x', '--xlim', nargs=2, type=float)
 parser.add_argument('-y', '--ylim', nargs=2, type=float)
+parser.add_argument('-t0', '--time_offset', type=float)
 parser.add_argument('--use_mpi', action='store_true')
 args = parser.parse_args()
 
@@ -81,7 +82,7 @@ for ds in ts:
     X_O = ad['X(O16)'].d
     X_Ni = ad['X(Ni56)'].d
     
-    if args.plot_avg_prof:
+    if args.plot_avg_prof is not None:
         
         vol = np.pi * ((r+dr/2)**2 - (r-dr/2)**2) * dz
         cell_mass = ad['density'].d * vol
@@ -121,11 +122,18 @@ for ds in ts:
         O_prof = au.get_avg_prof_2d(ds, 100, r, z, X_O, weight_data=cell_mass)
         Ni_prof = au.get_avg_prof_2d(ds, 100, r, z, X_Ni, weight_data=cell_mass)
         
-        plt.plot(r[:, 0], H_prof, label=r"$^{1}\mathrm{H}$")
-        plt.plot(r[:, 0], O_prof, label=r"$^{16}\mathrm{O}$")
-        plt.plot(r[:, 0], Ni_prof, label=r"$^{56}\mathrm{Ni}$")
+        if args.time_offset is not None:
+            x = r[:, 0] / (ds.current_time.d + args.time_offset)
+            xlabel = r"$R/t$ [cm/s]"
+        else:
+            x = r[:, 0]
+            xlabel = r"$R$ [cm]"
         
-        plt.xlabel(r"$\sqrt{r^2 + z^2}$ [cm]")
+        plt.plot(x, H_prof, label=r"$^{1}\mathrm{H}$")
+        plt.plot(x, O_prof, label=r"$^{16}\mathrm{O}$")
+        plt.plot(x, Ni_prof, label=r"$^{56}\mathrm{Ni}$")
+        
+        plt.xlabel(xlabel)
         plt.ylabel(r"X")
         if opt.get("xlog", False):
             plt.xscale("log")
