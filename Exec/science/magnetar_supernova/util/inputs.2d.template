@@ -73,7 +73,7 @@ amr.derive_plot_vars=ALL
 amr.small_plot_file = smallplt   # root name of plotfile
 amr.small_plot_per = &!small_plot_per # number of seconds between plotfiles
 amr.small_plot_vars = density
-amr.derive_small_plot_vars = x_velocity y_velocity magvel pressure soundspeed
+amr.derive_small_plot_vars = x_velocity y_velocity pressure
 
 eos.eos_gamma = 1.3333333333e0
 
