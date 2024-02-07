@@ -16,6 +16,7 @@ parser.add_argument('--plot_avg_prof', nargs='*', default=None)
 parser.add_argument('-x', '--xlim', nargs=2, type=float)
 parser.add_argument('-y', '--ylim', nargs=2, type=float)
 parser.add_argument('-t0', '--time_offset', type=float)
+parser.add_argument('--no_rgb', action='store_true')
 parser.add_argument('--use_mpi', action='store_true')
 args = parser.parse_args()
 
@@ -77,11 +78,12 @@ for ds in ts:
     ad = au.AMRData(ds, args.level)
     r, z = ad.position_data(units=False)
     dr, dz = ad.dds[:, args.level].d
-        
+    
     X_H = ad['X(H1)'].d
     X_O = ad['X(O16)'].d
     X_Ni = ad['X(Ni56)'].d
-    
+    X_He = ad['X(He4)'].d
+
     if args.plot_avg_prof is not None:
         
         vol = np.pi * ((r+dr/2)**2 - (r-dr/2)**2) * dz
@@ -102,6 +104,7 @@ for ds in ts:
         X_H = make_slc(X_H)
         X_O = make_slc(X_O)
         X_Ni = make_slc(X_Ni)
+        X_He = make_slc(X_He)
         cell_mass = make_slc(cell_mass)
         
     small = np.array([1e-6, 1e-6, 1e-6])
@@ -121,7 +124,8 @@ for ds in ts:
         H_prof = au.get_avg_prof_2d(ds, 100, r, z, X_H, weight_data=cell_mass)
         O_prof = au.get_avg_prof_2d(ds, 100, r, z, X_O, weight_data=cell_mass)
         Ni_prof = au.get_avg_prof_2d(ds, 100, r, z, X_Ni, weight_data=cell_mass)
-        
+        He_prof = au.get_avg_prof_2d(ds, 100, r, z, X_He, weight_data=cell_mass)
+
         if args.time_offset is not None:
             x = r[:, 0] / (ds.current_time.d + args.time_offset)
             xlabel = r"$R/t$ [cm/s]"
@@ -132,6 +136,7 @@ for ds in ts:
         plt.plot(x, H_prof, label=r"$^{1}\mathrm{H}$")
         plt.plot(x, O_prof, label=r"$^{16}\mathrm{O}$")
         plt.plot(x, Ni_prof, label=r"$^{56}\mathrm{Ni}$")
+        plt.plot(x, He_prof, label=r"$^{4}\mathrm{He}$")
         
         plt.xlabel(xlabel)
         plt.ylabel(r"X")
@@ -144,13 +149,15 @@ for ds in ts:
         plt.savefig(f'avg_comp_prof_{ds}.png')
         plt.gcf().clear()
      
-    red = to_color(X_H, 0, small, logmin, logrange)
-    grn = to_color(X_O, 1, small, logmin, logrange)
-    blu = to_color(X_Ni, 2, small, logmin, logrange)
+    if not args.no_rgb:
 
-    rgb = np.stack((red, grn, blu), axis=2)
-    plt.imshow(np.swapaxes(rgb, 0, 1), extent=[r[0,0], r[-1,0], z[0,0], z[0,-1]])
-    plt.xlabel("r [cm]")
-    plt.ylabel("z [cm]")
-    plt.savefig(f"composition_{ds}.png")
-    plt.gcf().clear()
+        red = to_color(X_H, 0, small, logmin, logrange)
+        grn = to_color(X_O, 1, small, logmin, logrange)
+        blu = to_color(X_Ni, 2, small, logmin, logrange)
+
+        rgb = np.stack((red, grn, blu), axis=2)
+        plt.imshow(np.swapaxes(rgb, 0, 1), extent=[r[0,0], r[-1,0], z[0,0], z[0,-1]])
+        plt.xlabel("r [cm]")
+        plt.ylabel("z [cm]")
+        plt.savefig(f"composition_{ds}.png")
+        plt.gcf().clear()
