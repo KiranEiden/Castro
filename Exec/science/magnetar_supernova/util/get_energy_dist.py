@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('datafiles', nargs="*")
 parser.add_argument("--no_dist", action='store_true')
 parser.add_argument('-l', '--level', type=int, default=0)
-parser.add_argument('-t', '--thresh', type=float, default=7.5e3)
+parser.add_argument('-t', '--thresh', type=float, default=1e9)
 parser.add_argument('--plot_cs_prof', action='store_true')
 parser.add_argument('--plot_mask', action='store_true')
 parser.add_argument('--plot_M_of_v', action='store_true')
@@ -34,13 +34,13 @@ if len(ts) < 1:
 if is_main_proc:
     print("Will load the following files: {}\n".format(ts))
 
-ts = au.FileLoader(ts, args.use_mpi)
+ts = au.FileLoader(ts, args.use_mpi, def_decomp='block')
 
 def do_plot_cs_prof(ds, r, z, cs):
     
     print(f"Plotting soundspeed profile for {ds}...")
     
-    avg, mxm, mnm, r1d = au.get_avg_prof_2d(ds, 100, r, z, cs/cs.min(), return_minmax=True, return_r=True)
+    avg, mxm, mnm, r1d = au.get_avg_prof_2d(ds, 100, r, z, cs, return_minmax=True, return_r=True)
         
     plt.plot(r1d, avg, label=r"$\langle c_s \rangle_{\theta}$")
     plt.plot(r1d, mxm, linestyle="-.", label=r"$\mathrm{max}_{\theta}(c_s)$")
@@ -100,7 +100,7 @@ def calc_2d(ds):
     """
 
     if do_mask:
-        of_mask = cs/cs.min() > args.thresh
+        of_mask = cs > args.thresh
         ej_mask = ~of_mask
 
     if args.plot_mask:
@@ -153,32 +153,74 @@ def main_serial():
 def main_parallel():
     
     nfields = 4 if args.no_dist else 7
-    outputs = np.zeros((len(ts), nfields), dtype=np.float64)
+    start, stop, _ = ts.do_decomp()
     
-    for i, ds in ts.parallel_enumerator():
+    bufsize = stop - start
+    bufsize_arr = np.zeros(MPI.COMM_WORLD.Get_size() - 1, np.int32)
+    bufsize_reqs = []
         
+    if is_main_proc:
+        for i in range(len(bufsize_arr)):
+            req = MPI.COMM_WORLD.Irecv([bufsize_arr[i:i+1], 1, MPI.INT], i+1)
+            bufsize_reqs.append(req)
+    else:
+        req = MPI.COMM_WORLD.Isend([stop-start, 1, MPI.INT], 0)
+        bufsize_reqs.append(req)
+        
+    if not bufsize > 0:
+        return
+    
+    outbuf_loc = np.empty((stop - start) * nfields, dtype=np.float64)
+    outview_loc = outbuf_loc.reshape((stop - start, nfields))
+    if is_main_proc:
+        outbuf_glob = np.empty(len(ts) * nfields, dtype=np.float64)
+        outview_glob = outbuf_glob.reshape((len(ts), nfields))
+    
+    for i, ds in enumerate(ts):
+    
         n = ds.dimensionality
         fstr = f"calc_{n}d(ds)"
         vals = eval(fstr)
-        
-        outputs[i, 0] = ds.current_time.d
-        outputs[i, 1:] = vals
-        
-    MPI.COMM_WORLD.Reduce(MPI.IN_PLACE, [outputs, MPI.DOUBLE], op=MPI.SUM)
+    
+        outview_loc[i, 0] = ds.current_time.d
+        outview_loc[i, 1:] = vals
+    
+    MPI.Request.Waitall(bufsize_reqs)
     
     if is_main_proc:
+        
+        data_reqs = []
+        outbuf_glob[:len(outbuf_loc)] = outbuf_loc
+        
+        for i in range(len(bufsize_arr)):
+            
+            if bufsize_arr[i] < 1:
+                continue
+                
+            bufstart = len(outbuf_loc) + bufsize_arr[:i].sum() * nfields
+            bufend = bufstart + bufsize_arr[i]*nfields
+            req = MPI.COMM_WORLD.Irecv([outbuf_glob[bufstart:bufend], MPI.DOUBLE], i+1)
+            data_reqs.append(req)
+            
+    else:
+        
+        MPI.COMM_WORLD.Isend([outbuf_loc, MPI.DOUBLE], 0)
+    
+    if is_main_proc:
+    
         if args.no_dist:
             header = """t E e M\ns erg erg g"""
         else:
             header = """t E_of E_ej e_of e_ej M_of M_ej\ns erg erg erg erg g g"""
-            
-        np.savetxt(args.output, outputs, header=header)
+    
+        MPI.Request.Waitall(data_reqs)
+        np.savetxt(args.output, outview_glob, header=header)
 
 if is_main_proc:
     print(f"Data file: {args.output}.")
     print()
 
-if args.use_mpi:
+if args.use_mpi and MPI.COMM_WORLD.Get_size() > 1:
     main_parallel()
 else:
     main_serial()

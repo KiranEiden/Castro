@@ -56,7 +56,7 @@ def mpi_importer():
 
 class FileLoader:
     
-    def __init__(self, files, use_mpi=False):
+    def __init__(self, files, use_mpi=False, def_decomp='cyclic'):
         
         try:
             len(files)
@@ -69,6 +69,9 @@ class FileLoader:
         if self.use_mpi:
             self.MPI = mpi_importer()
             self.comm = self.MPI.COMM_WORLD
+            
+        assert def_decomp in ('cyclic', 'block')
+        self.def_decomp = def_decomp
             
     def __len__(self):
         
@@ -85,26 +88,45 @@ class FileLoader:
     def _load(f):
         
         return yt.load(f, hint='CastroDataset')
+               
+    def do_decomp(self, decomp_type=None):
+        
+        MPI_N = self.comm.Get_size()
+        MPI_rank = self.comm.Get_rank()
+        
+        if decomp_type is None:
+            decomp_type = self.def_decomp
+        
+        if decomp_type == 'block':
+            num_in_block = np.full((MPI_N,), len(self.files) // MPI_N, dtype=np.int32)
+            num_in_block[:(len(self.files) % MPI_N)] += 1
+            start = num_in_block[:MPI_rank].sum()
+            stop = min(start + num_in_block[MPI_rank], len(self.files))
+            step = 1
+        elif decomp_type == 'cyclic':
+            start = MPI_rank
+            stop = len(self.files)
+            step = MPI_N
+            
+        return start, stop, step
             
     def serial_generator(self):
         
         for f in self.files:
             yield self._load(f)
             
-    def parallel_generator(self):
+    def parallel_generator(self, decomp_type=None):
         
-        MPI_N = self.comm.Get_size()
-        MPI_rank = self.comm.Get_rank()
+        start, stop, step = self.do_decomp(decomp_type)
         
-        for i in range(MPI_rank, len(self.files), MPI_N):
+        for i in range(start, stop, step):
             yield self._load(self.files[i])
             
-    def parallel_enumerator(self):
+    def parallel_enumerator(self, decomp_type=None):
         
-        MPI_N = self.comm.Get_size()
-        MPI_rank = self.comm.Get_rank()
+        start, stop, step = self.do_decomp(decomp_type)
         
-        for i in range(MPI_rank, len(self.files), MPI_N):
+        for i in range(start, stop, step):
             yield i, self._load(self.files[i])
 
 ################################
