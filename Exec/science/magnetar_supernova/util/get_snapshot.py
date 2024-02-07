@@ -10,8 +10,8 @@ import analysis_util as au
 parser = argparse.ArgumentParser()
 parser.add_argument('datafiles', nargs="*")
 parser.add_argument('-l', '--level', type=int, default=0)
-parser.add_argument('-f', "--fields", nargs="*", default=['density', 'magvel', 'pressure'])
-parser.add_argument('-o', '--output', default=None)
+parser.add_argument('-f', "--fields", nargs="*", default=['density', 'x_velocity', 'y_velocity', 'pressure', 'entropy', 'abar'])
+parser.add_argument('-wt', '--write_times', action='store_true')
 args = parser.parse_args()
 
 ts = args.datafiles
@@ -32,15 +32,24 @@ def calc_2d(ds):
         field_data[field] = ad[field].d
     
     # Write data to file
-    if not args.output:
-        args.output = f"snapshot_{ds}.npz"
+    outfile = f"snapshot_{ds}.npz"
     print("Saving snapshot...")
-    np.savez_compressed(args.output, r=r, z=z, **field_data)
+    np.savez_compressed(outfile, r=r, z=z, **field_data)
+
+if args.write_times:
+    f = open("times.dat", 'w')
+    print("# dataset time", file=f)
 
 for ds in ts:
         
     n = ds.dimensionality
     fstr = f"calc_{n}d(ds)"
-    vals = eval(fstr)
-    
-    print("Task completed.")
+    eval(fstr)
+
+    if args.write_times:
+        print(ds, ds.current_time.d, file=f)
+        
+if args.write_times:
+    f.close()
+
+print("Task completed.")
