@@ -30,6 +30,7 @@ castro.cfl            = 0.5     # cfl number for hyperbolic system
 castro.init_shrink    = 0.01    # scale back initial timestep
 castro.change_max     = 1.1     # maximum increase in dt over successive steps
 castro.max_subcycles  = 128
+castro.max_dt = 184.2748796466
 
 # DIAGNOSTICS & VERBOSITY
 castro.sum_interval   = 1       # timesteps between computing mass
@@ -66,13 +67,13 @@ amr.refine.abar.field_name = abar
 amr.check_int = 250    # number of timesteps between checkpoints
 
 # PLOTFILES
-amr.plot_per = 4606.871991165
+amr.plot_per = 4606.8719911650005
 amr.derive_plot_vars=ALL
 
 amr.small_plot_file = smallplt   # root name of plotfile
-amr.small_plot_per = 184.2748796466 # number of seconds between plotfiles
+amr.small_plot_per = 184.27487964660003 # number of seconds between plotfiles
 amr.small_plot_vars = density
-amr.derive_small_plot_vars = x_velocity y_velocity magvel pressure soundspeed
+amr.derive_small_plot_vars = x_velocity y_velocity pressure
 
 eos.eos_gamma = 1.3333333333e0
 
@@ -90,8 +91,8 @@ problem.f_a = 0.060517876975691
 problem.s = 0
 problem.delt = 0.0
 problem.depscale = 2.0
-problem.p_dep = 18.258558451114876
-problem.frac_lum_base = 0.845101391688193
+problem.p_dep = 18.26610565675026
+problem.frac_lum_base = 0.845161373554002
 problem.mass_mult = 7.5
 
 # MAGNETAR PARAMETERS

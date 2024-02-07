@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 5.11874665685e+06
+stop_time = 7.16624531959e+06
 
 # PROBLEM SIZE & GEOMETRY
 geometry.is_periodic =  0  0
@@ -30,6 +30,7 @@ castro.cfl            = 0.5     # cfl number for hyperbolic system
 castro.init_shrink    = 0.01    # scale back initial timestep
 castro.change_max     = 1.1     # maximum increase in dt over successive steps
 castro.max_subcycles  = 128
+castro.max_dt = 2047.49866274
 
 # DIAGNOSTICS & VERBOSITY
 castro.sum_interval   = 1       # timesteps between computing mass
@@ -41,7 +42,7 @@ amr.v                 = 0       # verbosity in Amr.cpp
 amr.max_level       = 3       # maximum level number allowed
 amr.ref_ratio       = 4 4 4 2 2 2 # refinement ratio
 amr.regrid_int      = 1       # how often to regrid
-amr.blocking_factor = 32       # block factor in grid generation
+amr.blocking_factor = 16       # block factor in grid generation
 amr.max_grid_size   = 256
 amr.derive_plot_vars = ALL
 
@@ -56,11 +57,11 @@ problem.refine_scale_bub = 1.2
 problem.refine_timescale_bub = 3.789127007437163e+04
 problem.ej_tag_vel = 3e9
 
-amr.refinement_indicators = abar
+#amr.refinement_indicators = abar
 
-amr.refine.abar.max_level = 3
-amr.refine.abar.value_greater = 1.00001
-amr.refine.abar.field_name = abar
+#amr.refine.abar.max_level = 3
+#amr.refine.abar.value_greater = 1.00001
+#amr.refine.abar.field_name = abar
 
 # CHECKPOINT FILES
 amr.check_int = 250    # number of timesteps between checkpoints
@@ -72,7 +73,7 @@ amr.derive_plot_vars=ALL
 amr.small_plot_file = smallplt   # root name of plotfile
 amr.small_plot_per = 2047.49866274 # number of seconds between plotfiles
 amr.small_plot_vars = density
-amr.derive_small_plot_vars = x_velocity y_velocity magvel pressure soundspeed
+amr.derive_small_plot_vars = x_velocity y_velocity pressure
 
 eos.eos_gamma = 1.3333333333e0
 

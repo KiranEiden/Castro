@@ -30,6 +30,7 @@ castro.cfl            = 0.5     # cfl number for hyperbolic system
 castro.init_shrink    = 0.01    # scale back initial timestep
 castro.change_max     = 1.1     # maximum increase in dt over successive steps
 castro.max_subcycles  = 128
+castro.max_dt = 20.4749866274
 
 # DIAGNOSTICS & VERBOSITY
 castro.sum_interval   = 1       # timesteps between computing mass
@@ -72,7 +73,7 @@ amr.derive_plot_vars=ALL
 amr.small_plot_file = smallplt   # root name of plotfile
 amr.small_plot_per = 20.4749866274 # number of seconds between plotfiles
 amr.small_plot_vars = density
-amr.derive_small_plot_vars = x_velocity y_velocity magvel pressure soundspeed
+amr.derive_small_plot_vars = x_velocity y_velocity pressure
 
 eos.eos_gamma = 1.3333333333e0
 
