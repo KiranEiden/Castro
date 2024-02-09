@@ -28,7 +28,7 @@ parser.add_argument('-fdep', type=float, default=0.03)
 parser.add_argument('-depscale', type=float, default=2.0)
 parser.add_argument('-chi', type=float, default=1e-3)
 parser.add_argument('-Mmag', type=float, default=1.25728227)
-parser.add_argument('-mu', type=float, default=1e-3)
+parser.add_argument('-mu', type=float, default=0.02)
 parser.add_argument('-res', type=int, default=8192)
 parser.add_argument('-ni_mass', type=float, default=0.125)
 parser.add_argument('-o_mass', type=float, default=0.25)
@@ -106,10 +106,12 @@ zeta_tr = 2 * (n - 5) * (9 - 2*d) * (11 - 2*d) / ((5 - d)**2 * (n - d) * (3 - d)
 t_tr = zeta_tr * E_sn / E_0 * t_m
 t_tag = (f_dep*r_0*depscale * t_tr**(alph - 1) / (beta * u.c))**(1/alph)
 
-M_inj = (E_0 * t_max / t_m / (t_max/t_m + 1.) / u.c**2).to(u.g)
+E_frac = t_max / t_m / (t_max/t_m + 1.)
+M_inj = (E_0 * E_frac / u.c**2).to(u.g)
 v_esc = ((4.0*u.G*M_mag/dr)**0.5).to(u.cm/u.s)
 E_K_inj = (0.5 * M_inj * v_esc**2).to(u.erg)
-M_mult = (mu*E_0 / E_K_inj).to(u.dimensionless)
+M_mult = (mu*(E_0*E_frac + E_sn) / E_K_inj).to(u.dimensionless)
+M_mult = min(M_mult, (mu*M_ej / M_inj).to(u.dimensionless))
 
 dep_cells = int((f_dep * r_0 * depscale) / dr + 0.5)
 
