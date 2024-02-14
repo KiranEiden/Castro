@@ -89,9 +89,8 @@ class FileLoader:
     def _load(f):
         
         return yt.load(f, hint='CastroDataset')
-        
-    @staticmethod        
-    def _do_decomp(decomp_type):
+               
+    def do_decomp(self, decomp_type):
         
         MPI_N = self.comm.Get_size()
         MPI_rank = self.comm.Get_rank()
@@ -101,7 +100,7 @@ class FileLoader:
         
         if decomp_type == 'block':
             num_in_block = np.full((MPI_N,), len(self.files) // MPI_N, dtype=np.int32)
-            num_in_block[:(len(self.files) % MPI_N)]
+            num_in_block[:(len(self.files) % MPI_N)] += 1
             start = num_in_block[:MPI_rank].sum()
             stop = min(start + num_in_block[MPI_rank], len(self.files))
             step = 1
@@ -119,14 +118,14 @@ class FileLoader:
             
     def parallel_generator(self, decomp_type=None):
         
-        start, stop, step = self._do_decomp(decomp_type)
+        start, stop, step = self.do_decomp(decomp_type)
         
         for i in range(start, stop, step):
             yield self._load(self.files[i])
             
     def parallel_enumerator(self, decomp_type=None):
         
-        start, stop, step = self._do_decomp(decomp_type)
+        start, stop, step = self.do_decomp(decomp_type)
         
         for i in range(start, stop, step):
             yield i, self._load(self.files[i])
