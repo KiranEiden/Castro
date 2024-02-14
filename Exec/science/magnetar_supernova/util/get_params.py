@@ -157,7 +157,7 @@ def stringify(num, n=4, imin=4, smallexp=3):
     
     # Round if there is a string of 'n' zeros or 'n' nines
     string = f"{num:.18e}"
-    exp = float(string[string.find('e')+1:])
+    exp = int(string[string.find('e')+1:])
     
     i = string.find("0"*n, imin)
     j = string.find("9"*n, imin)
@@ -167,7 +167,7 @@ def stringify(num, n=4, imin=4, smallexp=3):
         k = 17
     
     if np.abs(exp) <= smallexp:
-        return str(np.round(num, k-2))
+        return str(np.round(num, k-2-exp))
     else:
         fstr = "{:.%ie}" % (k-2)
         return fstr.format(num)
