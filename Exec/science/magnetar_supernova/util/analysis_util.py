@@ -73,10 +73,12 @@ class FileLoader:
             
         assert def_decomp in ('cyclic', 'block')
         self.def_decomp = def_decomp
+
             
     def __len__(self):
         
         return len(self.files)
+
         
     def __iter__(self):
         
@@ -84,11 +86,13 @@ class FileLoader:
             return self.parallel_generator()
         else:
             return self.serial_generator()
+
     
     @staticmethod        
     def _load(f):
         
         return yt.load(f, hint='CastroDataset')
+
                
     def do_decomp(self, decomp_type):
         
@@ -110,11 +114,13 @@ class FileLoader:
             step = MPI_N
             
         return start, stop, step
+
             
     def serial_generator(self):
         
         for f in self.files:
             yield self._load(f)
+            
             
     def parallel_generator(self, decomp_type=None):
         
@@ -122,6 +128,7 @@ class FileLoader:
         
         for i in range(start, stop, step):
             yield self._load(self.files[i])
+            
             
     def parallel_enumerator(self, decomp_type=None):
         
@@ -157,12 +164,12 @@ class AMRData:
         base_cells = ds.domain_dimensions[:self.dim]
         self.ncells = (base_cells * self.ref.T).T
         
-    
+        
     def __getitem__(self, field):
         
         return self.field_data(field)
         
-        
+
     def _level_check(self, level):
         
         if level is None:
@@ -171,12 +178,14 @@ class AMRData:
             raise ValueError(f"Level number must be in range [0, {self.nlevels-1}]")
         return level
         
+
     def _unytq_conv(self, val, to):
         
         if isinstance(val, u.unyt_quantity):
             return val.to(to).d
         else:
             return val
+
         
     def position_data(self, level=None, units=True):
         
@@ -194,7 +203,7 @@ class AMRData:
                 yield u.unyt_array(arr, self.ds.length_unit)
             else:
                 yield arr
-                
+        
         
     def field_data(self, field, level=None, units=True):
         
@@ -234,6 +243,7 @@ class AMRData:
         if units:
             return u.unyt_array(data, grid_data.units)
         return data
+
         
     def region_idx(self, *bounds, level=None):
         
@@ -246,11 +256,30 @@ class AMRData:
             
             dd = self.dds[d, level]
             lo = self.left_edge[d]
+            hi = self.right_edge[d]
+            
+            bounds[d][bounds[d] < lo] = lo
+            bounds[d][bounds[d] > hi] = hi
             
             idx[d] = np.rint((bounds[d] - lo) / dd - 0.5).astype(np.int32)
             bounds[d] = (idx[d] + 0.5) * dd + lo
             
+        # Increment right endpoint so it can be used with slices
+        idx[:,1] += 1
+        
         return idx, bounds
+
+        
+    def select_region(self, data, *bounds, level=None):
+        
+        level = self._level_check(level)
+        assert data.shape == tuple(self.ncells[:,level]), f"Shape of input data {data.shape} must"\
+                + f"match resolution at input level (level {level})."
+        
+        idx, bounds = self.region_idx(*bounds, level=level)
+        slices = tuple(slice(*idx[i]) for i in range(self.dim))
+        return data[slices], bounds
+
         
 ########################
 # Additional Functions #
@@ -721,19 +750,23 @@ class Nuclide:
         except (ValueError, KeyError, AssertionError):
             
             raise ValueError("Invalid nuclide string: '{}'.".format(string)) from None
+
     
     def __repr__(self):
         
         return "Nuclide({}, N={}, Z={})".format(self, *self)
+
         
     def __str__(self):
         
         return self.short_str().capitalize()
+
         
     def __iter__(self):
         
         yield self.Z
         yield self.N
+
         
     def _compare(self, other, op):
         
@@ -745,48 +778,59 @@ class Nuclide:
                 return op(tuple(self), (other_Z, other_N))
             except (TypeError, ValueError):
                 raise NotImplementedError
+
     
     def __eq__(self, other):
         
         return self._compare(other, lambda a, b: a == b)
+
         
     def __hash__(self):
         
         return hash(tuple(self))
+
         
     def __lt__(self, other):
         
         return self._compare(other, lambda a, b: a < b)
+
         
     def __gt__(self, other):
         
         return self._compare(other, lambda a, b: a > b)
+
         
     def __le__(self, other):
         
         return self._compare(other, lambda a, b: a <= b)
+
     
     def __ge__(self, other):
         
         return self._compare(other, lambda a, b: a >= b)
+
         
     def short_str(self):
         
         return self.sym + str(self.A)
+
         
     def long_str(self):
         
         return self.name + "-" + str(self.A)
+
             
     @classmethod
     def isnuclide(cls, string):
         
         return cls.match_long(string) or cls.match_short(string)
+
         
     @classmethod
     def match_long(cls, string):
         
         return cls.long_pat.match(string)
+
         
     @classmethod
     def match_short(cls, string):
