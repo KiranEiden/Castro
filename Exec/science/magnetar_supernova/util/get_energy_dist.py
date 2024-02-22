@@ -14,6 +14,7 @@ parser.add_argument('datafiles', nargs="*")
 parser.add_argument("--no_dist", action='store_true')
 parser.add_argument('-l', '--level', type=int, default=0)
 parser.add_argument('-t', '--thresh', type=float, default=1e9)
+parser.add_argument('-t0', '--time_offset', type=float)
 parser.add_argument('--plot_cs_prof', action='store_true')
 parser.add_argument('--plot_mask', action='store_true')
 parser.add_argument('--plot_M_of_v', action='store_true')
@@ -41,13 +42,20 @@ def do_plot_cs_prof(ds, r, z, cs):
     print(f"Plotting soundspeed profile for {ds}...")
     
     avg, mxm, mnm, r1d = au.get_avg_prof_2d(ds, 100, r, z, cs, return_minmax=True, return_r=True)
-        
-    plt.plot(r1d, avg, label=r"$\langle c_s \rangle_{\theta}$")
-    plt.plot(r1d, mxm, linestyle="-.", label=r"$\mathrm{max}_{\theta}(c_s)$")
-    plt.plot(r1d, mnm, linestyle=":", label=r"$\mathrm{min}_{\theta}(c_s)$")
-    plt.hlines(args.thresh, r1d[0], r1d[-1], color="black", linestyle="--", label="Threshold")
     
-    plt.xlabel(r"$\sqrt{r^2 + z^2}$ [cm]")
+    if args.time_offset is not None:
+        x = r1d / (ds.current_time.d + args.time_offset)
+        xlabel = r"$R/t$ [cm/s]"
+    else:
+        x = r1d
+        xlabel = r"$R$ [cm]"
+        
+    plt.plot(x, avg, label=r"$\langle c_s \rangle_{\theta}$")
+    plt.plot(x, mxm, linestyle="-.", label=r"$\mathrm{max}_{\theta}(c_s)$")
+    plt.plot(x, mnm, linestyle=":", label=r"$\mathrm{min}_{\theta}(c_s)$")
+    plt.hlines(args.thresh, x[0], x[-1], color="black", linestyle="--", label="Threshold")
+        
+    plt.xlabel(xlabel)
     plt.ylabel(r"$\tilde{c}_s$")
     plt.xscale("log")
     plt.yscale("log")
