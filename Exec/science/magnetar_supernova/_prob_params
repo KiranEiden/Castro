@@ -122,7 +122,7 @@ depscale real    3.0     y
 p_dep    real    8.380235398212328     y
 
 # Scalar multiplier for deposition rate
-frac_lum_base    real    9.999617275063291e-01   y
+frac_lum_base    real    1.0   y
 
 # Initial magnetar period (in ms)
 P_0    real    1.0    y
