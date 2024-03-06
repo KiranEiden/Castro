@@ -124,6 +124,9 @@ p_dep    real    8.380235398212328     y
 # Scalar multiplier for deposition rate
 frac_lum_base    real    1.0   y
 
+# Standard deviation for equatorial profile in radians (ignored for non-equatorial deposition)
+eq_ang    real    0.08726646259971647    y 
+
 # Initial magnetar period (in ms)
 P_0    real    1.0    y
 

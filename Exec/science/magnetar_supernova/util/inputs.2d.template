@@ -94,6 +94,7 @@ problem.depscale = &!depscale
 problem.p_dep = &!p_dep
 problem.frac_lum_base = &!frac_lum_base
 problem.mass_mult = &!M_mult
+problem.eq_ang = &!eq_ang
 
 # MAGNETAR PARAMETERS
 castro.add_ext_src = 1

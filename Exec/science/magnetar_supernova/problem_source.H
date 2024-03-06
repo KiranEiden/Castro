@@ -19,6 +19,8 @@ void problem_source (int i, int j, int k,
     constexpr Real G = 6.67430e-8_rt;
     constexpr Real k_b = 1.3807e-16_rt;
     constexpr Real M_sun = 1.98847e33_rt;
+    constexpr Real half_pi = 1.5707963267948966_rt;
+    constexpr Real four_thirds_pi = 4.1887902047863905_rt;
 
     Real frac_lum = frac_lum_base;
     if(time < t_mag_act)
@@ -54,7 +56,23 @@ void problem_source (int i, int j, int k,
     // "Deposition radius" to set initial energy deposition profile
     const Real r_dep = f_dep * (r_0 + beta*c*time);
     //const Real r_dep = f_dep * r_0;
-    
+
+#ifdef USE_EQ_DEP
+    const Real sign_y = (y < 0.0_rt) ? -1.0_rt : 1.0_rt;
+    const Real x1 = x + dx/2.0_rt;
+    const Real x2 = x - dx/2.0_rt;
+    const Real y1 = y - sign_y*dy/2.0_rt;
+    const Real y2 = y + sign_y*dy/2.0_rt;
+
+    Real ang_dist1 = half_pi - asin(x1 / sqrt(x1*x1 + y1*y1));
+    Real ang_dist2 = half_pi - asin(x2 / sqrt(x2*x2 + y2*y2)); 
+
+    if(ang_dist1 >= eq_ang)
+    {
+        return;
+    }
+#endif
+
     if(r > r_dep)
     {
         if(r > depscale*r_dep)
@@ -66,14 +84,14 @@ void problem_source (int i, int j, int k,
     }
     
     // Ejecta and CSM mass
-    // const Real M_ej = m_0 * 1.989e33_rt;
+    // const Real M_ej = m_0 * M_sun;
     // const Real M_csm = M_ej * eta;
     
     // Transition radius
     const Real R_t = f_r * r_0;
     
     // Ejecta density
-    // const Real rho0 = M_ej / (4.1887902047863905_rt * r_0*r_0*r_0);
+    // const Real rho0 = M_ej / (four_thirds_pi * r_0*r_0*r_0);
     
     // Opacity estimate, set so r_dep is at roughly \tau = 1
     // const Real kappa = 1.0 / (r_dep * rho0);
@@ -105,10 +123,24 @@ void problem_source (int i, int j, int k,
 // #endif
 
     // Estimate drhoe_dt, where energy is deposited uniformly over the volume
-    const Real V_dep = 4.1887902047863905_rt * r_dep*r_dep*r_dep;
-#ifdef USE_ASYM_DEP
+    const Real V_dep = four_thirds_pi * r_dep*r_dep*r_dep;
+#ifdef USE_SIN_DEP
     const Real sin_th = x/r;
     const Real drhoe_dt = L_tot / V_dep * frac_lum * 1.5_rt * sin_th*sin_th;
+#elif defined USE_EQ_DEP
+    const Real tan_ph = tan(eq_ang);
+    Real vol_rat = 1.0_rt;
+    if(ang_dist2 > eq_ang)
+    {
+        const Real x_lo = max(x2, y1 * sign_y / tan_ph);
+	const Real x_hi = min(x1, y2 * sign_y / tan_ph);
+	vol_rat = 2.0_rt/3.0_rt * (x_hi*x_hi*x_hi - x_lo*x_lo*x_lo) * tan_ph
+		 - y1 * (x_hi*x_hi - x_lo*x_lo) * sign_y
+		 + dy * (x1*x1 - x_hi*x_hi);
+	vol_rat /= 2.0_rt * x * dx * dy;
+    }
+
+    const Real drhoe_dt = L_tot / V_dep * frac_lum * vol_rat / sin(eq_ang);
 #else
     const Real drhoe_dt = L_tot / V_dep * frac_lum;
 #endif

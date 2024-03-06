@@ -36,6 +36,7 @@ parser.add_argument('-blend_thresh', type=float, default=1e-30)
 parser.add_argument('-ref_ratio', type=int, default=64)
 parser.add_argument('-plot_per', type=float, default=0.25)
 parser.add_argument('-small_plot_per', type=float, default=0.01)
+parser.add_argument('-eq_ang', type=float, default=2.5)
 parser.add_argument('-out')
 parser.add_argument('-template', default="inputs.2d.template")
 
@@ -78,6 +79,8 @@ assert res % base_res_r == 0
 
 plot_per = args.plot_per * t_m
 small_plot_per = args.small_plot_per * t_m
+
+eq_ang = (args.eq_ang * u.degree).to(u.radian)
 
 delt = 1.0; f_r = 0.25
 
@@ -145,10 +148,10 @@ print(f"{Fore.BLUE}p_dep{Style.RESET_ALL}: {Fore.GREEN}{p_dep:.15e}{Style.RESET_
 print(f"{Fore.BLUE}frac_lum_base{Style.RESET_ALL}: {Fore.GREEN}{frac_lum_base:.15e}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}t_tag{Style.RESET_ALL}: {Fore.GREEN}{t_tag:.15e}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}M_mult{Style.RESET_ALL}: {Fore.GREEN}{M_mult:.15e}{Style.RESET_ALL}")
+print(f"{Fore.BLUE}blend_scale{Style.RESET_ALL}: {Fore.GREEN}{blend_scale:.15e}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}dep_cells{Style.RESET_ALL}: {Fore.GREEN}{dep_cells}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}ni_cells{Style.RESET_ALL}: {Fore.GREEN}{ni_cells}{Style.RESET_ALL}")
 print(f"{Fore.BLUE}o_cells{Style.RESET_ALL}: {Fore.GREEN}{o_cells}{Style.RESET_ALL}")
-print(f"{Fore.BLUE}blend_scale{Style.RESET_ALL}: {Fore.GREEN}{blend_scale:.15e}{Style.RESET_ALL}")
     
 def stringify(num, n=4, imin=4, smallexp=3):
     
