@@ -754,7 +754,7 @@ class Nuclide:
     
     def __repr__(self):
         
-        return "Nuclide({}, N={}, Z={})".format(self, *self)
+        return "Nuclide({}, Z={}, N={})".format(self, *self)
 
         
     def __str__(self):

@@ -16,10 +16,14 @@ arad = 7.5657e-15
 description = "Convert Castro plotfiles to Sedona model files."
 datasets_help = "List of Castro plotfiles to convert."
 level_help = "AMR level associated with the uniform grid to use in the Sedona model files."
+add_decay_prod_help = "If provided, will add Co56 and Fe56 to the composition if not already present."
+split_Ni_help = "Split Ni56 into two elements, with the other element and relative fractions as arguments."
 
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('datasets', nargs='*', help=datasets_help)
-parser.add_argument('-l', '--level', nargs='+', type=int, default=0, help=level_help)
+parser.add_argument('-l', '--level', type=int, default=0, help=level_help)
+parser.add_argument('--add_decay_prod', action='store_true', help=add_decay_prod_help)
+parser.add_argument('--split_Ni', nargs=3, metavar=('ELEM', 'ELEM_FRAC', 'NI_FRAC'), help=split_Ni_help)
 
 args = parser.parse_args()
 
@@ -64,6 +68,32 @@ spec_names = map(lambda s: s[2:-1].lower(), mfrac_fields)
 spec_names = map(pad_spec_name, spec_names)
 nuclides = list(map(au.Nuclide, spec_names))
 
+if args.add_decay_prod:
+
+    Fe56 = au.Nuclide('Fe56')
+    Co56 = au.Nuclide('Co56')
+
+    if Fe56 not in nuclides:
+        nuclides.append(Fe56)
+        mfrac_fields.append(None)
+    if Co56 not in nuclides:
+        nuclides.append(Co56)
+        mfrac_fields.append(None)
+
+if args.split_Ni:
+
+    elem_name, elem_frac, Ni_frac = args.split_Ni
+    elem = au.Nuclide(elem_name)
+    nuclides.append(elem)
+
+    i_Ni = nuclides.index((28, 28))
+    elem_frac = float(elem_frac)
+    Ni_frac = float(Ni_frac)
+    assert (elem_frac + Ni_frac) == 1.0
+
+    mfrac_fields.append((elem_frac, mfrac_fields[i_Ni]))
+    mfrac_fields[i_Ni] = (Ni_frac, mfrac_fields[i_Ni])
+
 idx = sorted(range(len(nuclides)), key=lambda i: nuclides[i])
 nuclides = [nuclides[i] for i in idx]
 mfrac_fields = [mfrac_fields[i] for i in idx]
@@ -93,7 +123,12 @@ for ds in ts:
     
     comp = np.zeros((len(nuclides), *ad.ncells[:, args.level]), dtype=np.float64)
     for i in range(len(nuclides)):
-        comp[i, ...] = ad.field_data(mfrac_fields[i], units=False)
+        if mfrac_fields[i] is not None:
+            if isinstance(mfrac_fields[i], tuple):
+                weight, field = mfrac_fields[i]
+            else:
+                weight, field = 1.0, mfrac_fields[i]
+            comp[i, ...] = weight * ad.field_data(field, units=False)
     comp = np.transpose(comp, axes=(*range(1, ad.dim+1), 0))
     fout.create_dataset('comp', data=comp, dtype='d')
     
