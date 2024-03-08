@@ -200,8 +200,8 @@ def main_parallel():
         r_peak, r_inner, r_outer = do_pos_calc(log_rho, r, z, theta)
     
         outview_loc[i, 0] = ds.current_time.d
-        outview_loc[i, 1:] = r_peak
-        outview_loc[i, (1+len(theta)):] = r_inner
+        outview_loc[i, 1:(1+len(theta))] = r_peak
+        outview_loc[i, (1+len(theta)):(1+2*len(theta))] = r_inner
         outview_loc[i, (1+2*len(theta)):] = r_outer
         
         if args.summary:
@@ -229,7 +229,8 @@ def main_parallel():
         MPI.COMM_WORLD.Isend([outbuf_loc, MPI.DOUBLE], 0)
     
     if is_main_proc:
-    
+        
+        MPI.Request.Waitall(data_reqs)
         times = outview_glob[:, 0]
         pos = outview_glob[:, 1:].reshape((len(ts), 3, len(theta)))
         pos = np.swapaxes(pos, 0, 1)

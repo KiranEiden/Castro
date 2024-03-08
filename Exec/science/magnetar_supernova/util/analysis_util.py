@@ -94,7 +94,7 @@ class FileLoader:
         return yt.load(f, hint='CastroDataset')
 
                
-    def do_decomp(self, decomp_type):
+    def do_decomp(self, decomp_type=None):
         
         MPI_N = self.comm.Get_size()
         MPI_rank = self.comm.Get_rank()
