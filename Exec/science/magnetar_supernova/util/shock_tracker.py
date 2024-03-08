@@ -229,7 +229,8 @@ def main_parallel():
         MPI.COMM_WORLD.Isend([outbuf_loc, MPI.DOUBLE], 0)
     
     if is_main_proc:
-    
+        
+        MPI.Request.Waitall(data_reqs)
         times = outview_glob[:, 0]
         pos = outview_glob[:, 1:].reshape((len(ts), 3, len(theta)))
         pos = np.swapaxes(pos, 0, 1)
