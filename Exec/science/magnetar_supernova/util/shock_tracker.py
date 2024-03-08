@@ -200,8 +200,8 @@ def main_parallel():
         r_peak, r_inner, r_outer = do_pos_calc(log_rho, r, z, theta)
     
         outview_loc[i, 0] = ds.current_time.d
-        outview_loc[i, 1:] = r_peak
-        outview_loc[i, (1+len(theta)):] = r_inner
+        outview_loc[i, 1:(1+len(theta))] = r_peak
+        outview_loc[i, (1+len(theta)):(1+2*len(theta))] = r_inner
         outview_loc[i, (1+2*len(theta)):] = r_outer
         
         if args.summary:
