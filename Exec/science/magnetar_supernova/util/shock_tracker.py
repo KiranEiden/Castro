@@ -70,7 +70,7 @@ def get_log_rho(ds, return_pos_data=False):
     else:
         return log_rho
 
-def plot_summary(log_rho):
+def plot_summary(log_rho, pref):
     
     meij_d = meijering(log_rho, sigmas=args.sigmas, black_ridges=False)
     sato_d = sato(log_rho, sigmas=args.sigmas, black_ridges=False)
@@ -91,7 +91,7 @@ def plot_summary(log_rho):
     
     fig.set_size_inches((18, 12))
     sigstr = '_'.join(map(str, args.sigmas))
-    plt.savefig(os.path.join(args.outdir, f"{ds}_ridges_sigma_{sigstr}.png"), bbox_inches='tight')
+    plt.savefig(os.path.join(args.outdir, f"{pref}_ridges_sigma_{sigstr}.png"), bbox_inches='tight')
     fig.clear()
     
 def get_1d_rays(theta, r, z, data):
@@ -140,7 +140,7 @@ def main_serial():
     if args.no_calc:
         for ds in ts:
             log_rho = get_log_rho(ds)
-            plot_summary(log_rho)
+            plot_summary(log_rho, str(ds))
         return
         
     theta = np.linspace(0.0, np.pi, num=args.num_ang)
@@ -157,7 +157,7 @@ def main_serial():
         pos[2, i, :] = r_outer
             
         if args.summary:
-            plot_summary(log_rho)
+            plot_summary(log_rho, str(ds))
             
     write_dataset(times, theta, pos)
     
@@ -166,7 +166,7 @@ def main_parallel():
     if args.no_calc:
         for ds in ts:
             log_rho = get_log_rho(ds)
-            plot_summary(log_rho)
+            plot_summary(log_rho, str(ds))
         return
     
     theta = np.linspace(0.0, np.pi, num=args.num_ang)
@@ -205,7 +205,7 @@ def main_parallel():
         outview_loc[i, (1+2*len(theta)):] = r_outer
         
         if args.summary:
-            plot_summary(log_rho)
+            plot_summary(log_rho, str(ds))
     
     MPI.Request.Waitall(bufsize_reqs)
     
