@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import h5py
 import argparse
 import numpy as np
@@ -22,6 +23,8 @@ parser.add_argument('-of', '--outfile', default="shock_pos.h5")
 parser.add_argument('-od', '--outdir', default='')
 parser.add_argument('-t', '--thresh', type=float, default=0.2)
 parser.add_argument('-n', '--num_ang', type=int, default=100)
+parser.add_argument('--teng', type=float)
+parser.add_argument('--label')
 parser.add_argument('--use_mpi', action='store_true')
 args = parser.parse_args()
 
@@ -46,9 +49,8 @@ if is_main_proc:
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)
         
-def get_log_rho(ds, return_pos_data=False):
+def get_log_rho(ad, return_pos_data=False):
     
-    ad = au.AMRData(ds, args.level)
     if return_pos_data:
         r, z = ad.position_data(units=False)
     log_rho = np.log10(ad['density'].d)
@@ -82,7 +84,7 @@ def plot_summary(log_rho, pref):
     map1 = ax1.imshow(log_rho)
     map2 = ax2.imshow(meij_d)
     map3 = ax3.imshow(sato_d)
-    map4 = ax4.imshow(fran_d)
+    map4 = ax4.imshow(fran_d > args.thresh)
     
     fig.colorbar(map1, ax=ax1, location="bottom", orientation="horizontal")
     fig.colorbar(map2, ax=ax2, location="bottom", orientation="horizontal")
@@ -124,22 +126,30 @@ def do_pos_calc(log_rho, r, z, theta):
     r1d = r[:,0]
     return r1d[peak_loc], r1d[inner_loc], r1d[outer_loc]
     
-def write_dataset(times, theta, pos):
+def write_dataset(times, theta, pos, ad):
     
     file = h5py.File(os.path.join(args.outdir, args.outfile), 'w')
     file.create_dataset("time", data=times, dtype='d')
     file.create_dataset("ang", data=theta, dtype='d')
+    file.create_dataset("dx", data=ad.dds[:, args.level].d, dtype='d')
+    file.create_dataset("domain_left_edge", data=ad.left_edge.d, dtype='d')
+    file.create_dataset("domain_right_edge", data=ad.right_edge.d, dtype='d')
     pos_grp = file.create_group("shock_pos")
     pos_grp.create_dataset("r_peak", data=pos[0], dtype='d')
     pos_grp.create_dataset("r_inner", data=pos[1], dtype='d')
     pos_grp.create_dataset("r_outer", data=pos[2], dtype='d')
+    if args.teng is not None:
+        file.create_dataset("teng", data=[args.teng])
+    if args.label:
+        file.create_dataset("label", data=[args.label])
     file.close()
     
 def main_serial():
     
     if args.no_calc:
         for ds in ts:
-            log_rho = get_log_rho(ds)
+            ad = au.AMRData(ds, args.level)
+            log_rho = get_log_rho(ad)
             plot_summary(log_rho, str(ds))
         return
         
@@ -150,7 +160,8 @@ def main_serial():
     for i, ds in enumerate(ts):
         
         times[i] = ds.current_time.d
-        log_rho, r, z = get_log_rho(ds, True)
+        ad = au.AMRData(ds, args.level)
+        log_rho, r, z = get_log_rho(ad, True)
         r_peak, r_inner, r_outer = do_pos_calc(log_rho, r, z, theta)
         pos[0, i, :] = r_peak
         pos[1, i, :] = r_inner
@@ -159,13 +170,14 @@ def main_serial():
         if args.summary:
             plot_summary(log_rho, str(ds))
             
-    write_dataset(times, theta, pos)
+    write_dataset(times, theta, pos, ad)
     
 def main_parallel():
     
     if args.no_calc:
         for ds in ts:
-            log_rho = get_log_rho(ds)
+            ad = au.AMRData(ds, args.level)
+            log_rho = get_log_rho(ad)
             plot_summary(log_rho, str(ds))
         return
     
@@ -196,7 +208,8 @@ def main_parallel():
     
     for i, ds in enumerate(ts):
     
-        log_rho, r, z = get_log_rho(ds, True)
+        ad = au.AMRData(ds, args.level)
+        log_rho, r, z = get_log_rho(ad, True)
         r_peak, r_inner, r_outer = do_pos_calc(log_rho, r, z, theta)
     
         outview_loc[i, 0] = ds.current_time.d
@@ -227,14 +240,16 @@ def main_parallel():
     else:
         
         MPI.COMM_WORLD.Isend([outbuf_loc, MPI.DOUBLE], 0)
-    
+   
+    MPI.COMM_WORLD.Barrier()
+
     if is_main_proc:
         
         MPI.Request.Waitall(data_reqs)
         times = outview_glob[:, 0]
         pos = outview_glob[:, 1:].reshape((len(ts), 3, len(theta)))
         pos = np.swapaxes(pos, 0, 1)
-        write_dataset(times, theta, pos)
+        write_dataset(times, theta, pos, ad)
         
 if is_main_proc:
     print(f"Data file: {args.outfile}.")
