@@ -384,7 +384,7 @@ def get_avg_prof_2d(ds, nrays=100, r=None, z=None, data=None, **kwargs):
     theta = np.linspace(*ang_range, num=nrays)
         
     if weight_data is not None:
-        _weighted_avg_prof_2d_helper(theta, r, z, data, weight_data, return_minmax, return_r)
+       return _weighted_avg_prof_2d_helper(theta, r, z, data, weight_data, return_minmax, return_r)
     return _avg_prof_2d_helper(theta, r, z, data, return_minmax, return_r)
     
     
@@ -394,7 +394,7 @@ def _avg_prof_2d_helper(theta, r, z, data, return_minmax, return_r):
     r1d = r[:,0]
     
     # Fixed resolution rays don't work in 2d with my yt version
-    interp = RegularGridInterpolator((r1d, z[0]), data, bounds_error=False, fill_value=None)
+    interp = RegularGridInterpolator((r1d, z[0]), data, bounds_error=True)
     xi = np.column_stack((np.sin(theta), np.cos(theta)))
     
     if return_minmax:
@@ -411,7 +411,10 @@ def _avg_prof_2d_helper(theta, r, z, data, return_minmax, return_r):
         mnm = np.empty_like(r1d)
         mxm = np.empty_like(r1d)
     for i in range(len(r1d)):
-        pts = interp(r1d[i] * xi)
+        loc = r1d[i] * xi
+        np.clip(loc[:, 0], r1d[0], r1d[-1], out=loc[:, 0])
+        np.clip(loc[:, 1], z[0, 0], z[0, -1], out=loc[:, 1])
+        pts = interp(loc)
         update()
         
     if not (return_minmax or return_r):
@@ -431,8 +434,8 @@ def _weighted_avg_prof_2d_helper(theta, r, z, data, weight_data, return_minmax, 
     r1d = r[:,0]
     
     # Fixed resolution rays don't work in 2d with my yt version
-    interp = RegularGridInterpolator((r1d, z[0]), data, bounds_error=False, fill_value=None)
-    weight_interp = RegularGridInterpolator((r1d, z[0]), weight_data, bounds_error=False, fill_value=None)
+    interp = RegularGridInterpolator((r1d, z[0]), data, bounds_error=True)
+    weight_interp = RegularGridInterpolator((r1d, z[0]), weight_data, bounds_error=True)
     xi = np.column_stack((np.sin(theta), np.cos(theta)))
     
     if return_minmax:
@@ -450,6 +453,8 @@ def _weighted_avg_prof_2d_helper(theta, r, z, data, weight_data, return_minmax, 
         mxm = np.empty_like(r1d)
     for i in range(len(r1d)):
         loc = r1d[i] * xi
+        np.clip(loc[:, 0], r1d[0], r1d[-1], out=loc[:, 0])
+        np.clip(loc[:, 1], z[0, 0], z[0, -1], out=loc[:, 1])
         pts = interp(loc)
         weights = weight_interp(loc)
         update()
