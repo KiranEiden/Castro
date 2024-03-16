@@ -107,7 +107,7 @@ for ds in ts:
         X_He = make_slc(X_He)
         cell_mass = make_slc(cell_mass)
         
-    small = np.array([1e-6, 1e-6, 1e-6])
+    small = np.array([1e-5, 1e-5, 1e-5])
     large = np.array([1.0, 1.0, 1.0])
 
     logmin = np.log10(small)
@@ -128,10 +128,10 @@ for ds in ts:
 
         if args.time_offset is not None:
             x = r[:, 0] / (ds.current_time.d + args.time_offset)
-            xlabel = r"$R/t$ [cm/s]"
+            xlabel = r"$x/(t + t_0)$ [cm/s]"
         else:
             x = r[:, 0]
-            xlabel = r"$R$ [cm]"
+            xlabel = r"$x$ [cm]"
         
         plt.plot(x, H_prof, label=r"$^{1}\mathrm{H}$")
         plt.plot(x, O_prof, label=r"$^{16}\mathrm{O}$")
@@ -139,12 +139,14 @@ for ds in ts:
         plt.plot(x, He_prof, label=r"$^{4}\mathrm{He}$")
         
         plt.xlabel(xlabel)
-        plt.ylabel(r"X")
+        plt.ylabel(r"Average Mass Fraction")
         if opt.get("xlog", False):
             plt.xscale("log")
+        if "xmax" in opt:
+            plt.xlim(x.min(), float(opt['xmax']))
         plt.yscale("log")
         plt.ylim(small.min(), 1.2)
-        plt.legend()
+        plt.legend(loc="lower right")
         
         plt.savefig(f'avg_comp_prof_{ds}.png')
         plt.gcf().clear()
