@@ -36,7 +36,7 @@ bounds_help = "The bounds for the colorbar."
 cmap_help = "The colormap for the variable to plot."
 log_help = "If provided, sets the plot to a logarithmic scale."
 time_help = """If provided, adds a timestamp to each plot with the given precision. Additional
-        configuration options can be set using --timeopt."""
+        configuration options can be set using --time_opt."""
 time_opt_help = """Dictionary of additional arguments for formatting the time displayed on the plot.
         Any keyword arguments to annotate_timestamp should be valid, and the additional option
         'sci' can be set to 1 to give the time in scientific notation."""
@@ -74,6 +74,8 @@ even_dim_help = """Adjust the image size in pixels in each dimension to the near
 Pmag_help = "Magnetar period (in ms) to use for setting the magnetar timescale. Assumes B = 10^{15} Gauss."
 use_mpi_help = """Whether to parallelize with MPI or not, assuming script was run with MPI. Requires
         analysis_util module to be present."""
+plugin_help = """Provide this argument to have yt load a plugin file. Can supply a filename to load a specific plugin
+        file, or omit the filename to have yt look for the plugin file in the default location."""
 
 #########################
 # Argument parser setup #
@@ -84,7 +86,7 @@ parser.add_argument('datasets', nargs='*', help=datasets_help)
 parser.add_argument('-l', '--list_fields', action='store_true', help=list_fields_help)
 parser.add_argument('--proj', action='store_true', help=proj_help)
 parser.add_argument('-o', '--out', default='', help=out_help)
-parser.add_argument('-v', '--var', default='temp', help=var_help)
+parser.add_argument('-v', '--var', default='density', help=var_help)
 parser.add_argument('-n', '--normal', nargs='+', default='', help=normal_help)
 parser.add_argument('-b', '--bounds', nargs=2, type=float, metavar=('LOWER', 'UPPER'),
         help=bounds_help)
@@ -106,7 +108,7 @@ parser.add_argument('-x', '--xlim', nargs=2, type=float, metavar=('UPPER', 'LOWE
 parser.add_argument('-y', '--ylim', nargs=2, type=float, metavar=('UPPER', 'LOWER'), help=ylim_help)
 parser.add_argument('--xseq', nargs=3, type=float, metavar=('START', 'STOP', 'STEP'))
 parser.add_argument('--yseq', nargs=3, type=float, metavar=('START', 'STOP', 'STEP'))
-parser.add_argument('-S', '--stream', nargs=3, metavar=('XFIELD', 'YFIELD', 'FACTOR'))
+parser.add_argument('-S', '--stream', nargs=2, metavar=('XFIELD', 'YFIELD'))
 parser.add_argument('-So', '--stream_opt', nargs='*', help=stream_opt_help)
 parser.add_argument('--grid', nargs='*', default=None, help=grid_help)
 parser.add_argument('--cell_edges', action='store_true', help=cell_edges_help)
@@ -115,16 +117,23 @@ parser.add_argument('--aspect', type=float, default=None, help=aspect_help)
 parser.add_argument('--even_dim', action='store_true', help=even_dim_help)
 parser.add_argument('--Pmag', type=float, default=1.0, help=Pmag_help)
 parser.add_argument('--use_mpi', action='store_true', help=use_mpi_help)
+parser.add_argument('--plugin', nargs='?', const="", help=plugin_help)
 
 args = parser.parse_args()
-
-if args.use_mpi:
-    MPI = au.mpi_importer()
-is_main_proc = (not args.use_mpi) or (MPI.COMM_WORLD.Get_rank() == 0)
 
 ##############################
 # Process argparse arguments #
 ##############################
+
+if args.plugin is not None:
+    if args.plugin:
+        yt.enable_plugins(args.plugin)
+    else:
+        yt.enable_plugins()
+
+if args.use_mpi:
+    MPI = au.mpi_importer()
+is_main_proc = (not args.use_mpi) or (MPI.COMM_WORLD.Get_rank() == 0)
 
 def safe_convert(string_val):
     """
@@ -139,12 +148,10 @@ def safe_convert(string_val):
         try:
             values[i] = int(values[i])
         except ValueError:
-            pass
-
-        try:
-            values[i] = float(values[i])
-        except ValueError:
-            pass
+            try:
+                values[i] = float(values[i])
+            except ValueError:
+                pass
 
     if len(values) == 1:
         values = values[0]
@@ -183,8 +190,6 @@ if args.quiver is not None:
 
 if args.stream is not None:
 
-    # Streamline density factor
-    args.stream[2] = int(args.stream[2])
     stream_opt = {}
 
     # Additional streamline options
@@ -193,7 +198,8 @@ if args.stream is not None:
 
 if args.contour is not None:
 
-    args.contour[1:] = list(map(float, args.contour[1:]))
+    args.contour[1] = int(args.contour[1])
+    args.contour[2:] = list(map(float, args.contour[2:]))
     contour_opt = {}
 
     if args.contour_opt is not None:
@@ -349,7 +355,7 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
         plot.annotate_quiver(*args.quiver)
 
     if args.contour is not None:
-        plot.annotate_contour(args.contour[0], ncont=args.contour[1], clim=args.contour[2:], **contour_opt)
+        plot.annotate_contour(args.contour[0], levels=args.contour[1], clim=args.contour[2:], **contour_opt)
 
     if args.stream is not None:
 
@@ -357,11 +363,7 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
 
         # Non-matplotlib arguments
         outline = plot_args.pop('outline', None)
-        field_color = plot_args.pop('field_color', None)
-        display_threshold = plot_args.pop('display_threshold', None)
         cbar = plot_args.pop('cbar', False)
-
-        kw = dict(field_color=field_color, display_threshold=display_threshold)
 
         # Defaults for some matplotlib arguments
         plot_args.setdefault('linewidth', 2)
@@ -371,11 +373,12 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
             plot_args_outline = plot_args.copy()
             plot_args_outline['color'] = outline
             plot_args_outline['linewidth'] =  plot_args['linewidth'] + 1
-            plot.annotate_streamlines(*args.stream, plot_args=plot_args_outline, **kw)
+            plot.annotate_streamlines(*args.stream, **plot_args_outline)
 
-        if cbar: kw['add_colorbar'] = True
+        if cbar:
+            plot_args['add_colorbar'] = True
 
-        plot.annotate_streamlines(*args.stream, plot_args=plot_args, **kw)
+        plot.annotate_streamlines(*args.stream, **plot_args)
 
     if args.grid is not None:
 
