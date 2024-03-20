@@ -38,8 +38,10 @@ log_help = "If provided, sets the plot to a logarithmic scale."
 time_help = """If provided, adds a timestamp to each plot with the given precision. Additional
         configuration options can be set using --time_opt."""
 time_opt_help = """Dictionary of additional arguments for formatting the time displayed on the plot.
-        Any keyword arguments to annotate_timestamp should be valid, and the additional option
-        'sci' can be set to 1 to give the time in scientific notation."""
+        The 'pos' and 'coord_system' keyword arguments to annotate_text are be valid, and the
+        additional option 'sci' can be set to 1 to give the time in scientific notation, 'time_unit'
+        and 'second_time_unit' can be used to set the units, and any remaining arguments are
+        supplied as 'text_args'."""
 plot_args_help = """Dictionary of additional plot args to supply to the plot constructor
         (e.g. '--plot_args method:integrate' for a projection plot). Will be overridden by arguments
         supplied through other options. See script description for explanation of dictionary format."""
@@ -74,8 +76,11 @@ even_dim_help = """Adjust the image size in pixels in each dimension to the near
 Pmag_help = "Magnetar period (in ms) to use for setting the magnetar timescale. Assumes B = 10^{15} Gauss."
 use_mpi_help = """Whether to parallelize with MPI or not, assuming script was run with MPI. Requires
         analysis_util module to be present."""
-plugin_help = """Provide this argument to have yt load a plugin file. Can supply a filename to load a specific plugin
-        file, or omit the filename to have yt look for the plugin file in the default location."""
+plugin_help = """Provide this argument to have yt load a plugin file. Can supply a filename to load
+        a specific plugin file, or omit the filename to have yt look for the plugin file in the
+        default location."""
+overwrite_image_help = """Overwrite the image with data from a uniform covering grid at the
+        resolution of the specified AMR level. Requires the analysis_util module to be present."""
 
 #########################
 # Argument parser setup #
@@ -118,6 +123,7 @@ parser.add_argument('--even_dim', action='store_true', help=even_dim_help)
 parser.add_argument('--Pmag', type=float, default=1.0, help=Pmag_help)
 parser.add_argument('--use_mpi', action='store_true', help=use_mpi_help)
 parser.add_argument('--plugin', nargs='?', const="", help=plugin_help)
+parser.add_argument('--overwrite_image', type=int, metavar=('LEVEL',), help=overwrite_image_help)
 
 args = parser.parse_args()
 
@@ -334,22 +340,47 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
 
     if args.time is not None:
 
-        if args.time_opt.pop('sci', 0):
+        time = ds.current_time
+        time_opt = args.time_opt.copy()
+        
+        if time_opt.pop('sci', 0):
             scistr = 'e'
         else:
             scistr = 'f'
-        time_format = 't = {{time:.{}{}}}{{units}}'.format(args.time, scistr)
+        time_unit = time_opt.pop('time_unit', 's')
+        second_time_unit = time_opt.pop('second_time_unit', None)
+        if time_unit == "smallest":
+            time_unit = ds.get_smallest_appropriate_unit(time, quantity="time")
+        if second_time_unit == "smallest":
+            second_time_unit = ds.get_smallest_appropriate_unit(time, quantity="time")
 
-        args.time_opt.setdefault('corner', 'upper_left')
-        args.time_opt.setdefault('time_format', time_format)
-        args.time_opt.setdefault('draw_inset_box', False)
-        args.time_opt.setdefault('time_unit', 's')
+        def_pos = (0.03, 0.96) # upper left
+        pos = time_opt.pop('pos', def_pos) 
+        coord_sys = time_opt.pop('coord_system', 'axis')
+        time_opt.setdefault('horizontalalignment', 'left')
+        time_opt.setdefault('verticalalignment', 'top')
 
         reg = ds.current_time.units.registry
-        reg.add('tmag', base_value=(args.Pmag**2 * 2047.49866274), dimensions=u.dimensions.time)
+        reg.add('tmag', base_value=(args.Pmag**2 * 2047.49866274), dimensions=u.dimensions.time,
+                tex_repr="\\rm{t_{mag}}")
+        reg.add('teng', base_value=(args.Pmag**2 * 2047.49866274), dimensions=u.dimensions.time,
+                tex_repr="\\rm{t_{eng}}")
+                
+        time_fmt = f"{{:.{args.time}{scistr}}}"
+        time_text = f"t = {time_fmt}$~{{}}$"
+        time_u = time.to(time_unit)
+        time_text = time_text.format(time_u.d, time_u.units.latex_repr)
+        if second_time_unit is not None:
+            second_time_text = f" ({time_fmt}$~{{}})$"
+            time_su = time.to(second_time_unit)
+            second_time_text = second_time_text.format(time_su.d, time_su.units.latex_repr)
+            time_text += second_time_text
+            
+        plot.annotate_text(pos, time_text, coord_system=coord_sys, text_args=time_opt)
         
         # Previously: draw_inset_box=True, inset_box_args={'alpha': 0.0}
-        plot.annotate_timestamp(**args.time_opt)
+        # Previously: time_format = 't = {{time:.{}{}}}{{units}}'.format(args.time, scistr)
+        # Previously used annotate_timestamp
 
     if args.quiver is not None:
         plot.annotate_quiver(*args.quiver)
@@ -394,17 +425,31 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
     if args.cell_edges:
 
         plot.annotate_cell_edges()
+        
+    if args.overwrite_image is not None:
+        
+        print("Overwriting image data...")
+        ad = au.AMRData(ds, args.overwrite_image)
+        fig = plot.export_to_mpl_figure((1,1))
+        subplot = plot.plots[field]
+        subplot.image.set_data(ad.field_data('density', units=False).T[::-1])
+        fig.canvas.draw_idle()
 
     #############
     # Save plot #
     #############
 
     fig = plot.plots[field].figure
-
+    
     if args.save_args is None:
         save_args = {}
     else:
         save_args = get_argdict(args.save_args)
+        
+    if args.overwrite_image is not None:
+        if 'bbox_inches' not in save_args:
+            save_args['bbox_inches'] = 'tight'
+            save_args['pad_inches'] = 0.25
     
     if fname_pref == None:
         fname_pref = f'{ds}'
