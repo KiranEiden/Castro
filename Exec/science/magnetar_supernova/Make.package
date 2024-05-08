@@ -6,6 +6,10 @@ ifeq ($(USE_SIN_DEP), TRUE)
     DEFINES += -DUSE_SIN_DEP
 endif
 
+ifeq ($(USE_COS_DEP), TRUE)
+    DEFINES += -DUSE_COS_DEP
+endif
+
 ifeq ($(USE_EQ_DEP), TRUE)
     DEFINES += -DUSE_EQ_DEP
 endif

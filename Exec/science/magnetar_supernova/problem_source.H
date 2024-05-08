@@ -105,7 +105,7 @@ void problem_source (int i, int j, int k,
     
     // Evaluate at start of timestep
     const Real tfac = time/t_m + 1.0_rt;
-    const Real L_tot = E_0 / (t_m * tfac * tfac);
+    const Real L_tot = E_0 * (k_eng - 1.0_rt) / (t_m * pow(tfac, k_eng));
 
 	// Estimate drhoe_dt (rate of change of internal energy density)
 // #if AMREX_SPACEDIM == 1
@@ -124,25 +124,29 @@ void problem_source (int i, int j, int k,
 
     // Estimate drhoe_dt, where energy is deposited uniformly over the volume
     const Real V_dep = four_thirds_pi * r_dep*r_dep*r_dep;
+    Real drhoe_dt = L_tot / V_dep * frac_lum;
 #ifdef USE_SIN_DEP
     const Real sin_th = x/r;
-    const Real drhoe_dt = L_tot / V_dep * frac_lum * 1.5_rt * sin_th*sin_th;
-#elif defined USE_EQ_DEP
+    drhoe_dt *= 1.5_rt * sin_th*sin_th;
+#endif
+#ifdef USE_COS_DEP
+    const Real cos_th = y/r;
+    drhoe_dt *= 3.0_rt * cos_th*cos_th;
+#endif    
+#ifdef USE_EQ_DEP
     const Real tan_ph = tan(eq_ang);
     Real vol_rat = 1.0_rt;
     if(ang_dist2 > eq_ang)
     {
         const Real x_lo = max(x2, y1 * sign_y / tan_ph);
-	const Real x_hi = min(x1, y2 * sign_y / tan_ph);
-	vol_rat = 2.0_rt/3.0_rt * (x_hi*x_hi*x_hi - x_lo*x_lo*x_lo) * tan_ph
-		 - y1 * (x_hi*x_hi - x_lo*x_lo) * sign_y
-		 + dy * (x1*x1 - x_hi*x_hi);
-	vol_rat /= 2.0_rt * x * dx * dy;
+        const Real x_hi = min(x1, y2 * sign_y / tan_ph);
+        vol_rat = 2.0_rt/3.0_rt * (x_hi*x_hi*x_hi - x_lo*x_lo*x_lo) * tan_ph
+             - y1 * (x_hi*x_hi - x_lo*x_lo) * sign_y
+             + dy * (x1*x1 - x_hi*x_hi);
+        vol_rat /= 2.0_rt * x * dx * dy;
     }
 
-    const Real drhoe_dt = L_tot / V_dep * frac_lum * vol_rat / sin(eq_ang);
-#else
-    const Real drhoe_dt = L_tot / V_dep * frac_lum;
+    drhoe_dt *= vol_rat / sin(eq_ang);
 #endif
 
     // // Estimate drhoe_dt with parabolic energy deposition dropoff
