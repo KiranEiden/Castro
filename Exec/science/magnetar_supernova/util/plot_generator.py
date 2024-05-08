@@ -41,7 +41,7 @@ time_opt_help = """Dictionary of additional arguments for formatting the time di
         The 'pos' and 'coord_system' keyword arguments to annotate_text are be valid, and the
         additional option 'sci' can be set to 1 to give the time in scientific notation, 'time_unit'
         and 'second_time_unit' can be used to set the units, and any remaining arguments are
-        supplied as 'text_args'."""
+        supplied using the text_args keyword argument."""
 plot_args_help = """Dictionary of additional plot args to supply to the plot constructor
         (e.g. '--plot_args method:integrate' for a projection plot). Will be overridden by arguments
         supplied through other options. See script description for explanation of dictionary format."""
@@ -172,6 +172,18 @@ def get_argdict(arglist):
     pairs = map(lambda s: s.split(':'), arglist)
     pairs = ((k, safe_convert(v)) for k, v in pairs)
     return dict(pairs)
+    
+def get_reasonable_time_unit(ds, time):
+    """
+    Convert to appropriate time unit (uses *ds.get_smallest_appropriate_unit* function with minutes
+    added to the sequence).
+    """
+    
+    if not isinstance(time, u.unyt_quantity):
+        time = time * u.s
+    if 60.0 <= time.in_cgs().d <= 3600:
+        return u.min
+    return ds.get_smallest_appropriate_unit(time, quantity="time")
     
 if args.time is not None:
     
@@ -349,14 +361,15 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
             scistr = 'f'
         time_unit = time_opt.pop('time_unit', 's')
         second_time_unit = time_opt.pop('second_time_unit', None)
-        if time_unit == "smallest":
-            time_unit = ds.get_smallest_appropriate_unit(time, quantity="time")
-        if second_time_unit == "smallest":
-            second_time_unit = ds.get_smallest_appropriate_unit(time, quantity="time")
+        if time_unit == "auto":
+            time_unit = get_reasonable_time_unit(ds, time)
+        if second_time_unit == "auto":
+            second_time_unit = get_reasonable_time_unit(ds, time)
 
         def_pos = (0.03, 0.96) # upper left
         pos = time_opt.pop('pos', def_pos) 
         coord_sys = time_opt.pop('coord_system', 'axis')
+        label_pref = time_opt.pop('prefix', 't = ')
         time_opt.setdefault('horizontalalignment', 'left')
         time_opt.setdefault('verticalalignment', 'top')
 
@@ -367,7 +380,7 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
                 tex_repr="\\rm{t_{eng}}")
                 
         time_fmt = f"{{:.{args.time}{scistr}}}"
-        time_text = f"t = {time_fmt}$~{{}}$"
+        time_text = label_pref + f"{time_fmt}$~{{}}$"
         time_u = time.to(time_unit)
         time_text = time_text.format(time_u.d, time_u.units.latex_repr)
         if second_time_unit is not None:
@@ -430,9 +443,18 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
         
         print("Overwriting image data...")
         ad = au.AMRData(ds, args.overwrite_image)
+        data = ad.field_data(field, units=False)
+        
+        if xlim or ylim:
+            if not xlim:
+                xlim = ad.left_edge[0], ad.right_edge[0]
+            if not ylim:
+                ylim = ad.left_edge[1], ad.right_edge[1]
+            data, _ = ad.select_region(data, *xlim, *ylim)    
+                
         fig = plot.export_to_mpl_figure((1,1))
-        subplot = plot.plots[field]
-        subplot.image.set_data(ad.field_data('density', units=False).T[::-1])
+        subplot = plot.plots[field]    
+        subplot.image.set_data(data.T[::-1])
         fig.canvas.draw_idle()
 
     #############
