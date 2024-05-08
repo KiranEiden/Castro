@@ -17,13 +17,21 @@ description = "Convert Castro plotfiles to Sedona model files."
 datasets_help = "List of Castro plotfiles to convert."
 level_help = "AMR level associated with the uniform grid to use in the Sedona model files."
 add_decay_prod_help = "If provided, will add Co56 and Fe56 to the composition if not already present."
-split_Ni_help = "Split Ni56 into two elements, with the other element and relative fractions as arguments."
+split_elem_help = """Split elements into themselves and one other element. Can supply any number elements to split
+        (including repeats) using the format base_element:product_element:product_element_fraction, where the last
+        component will be assumed to be 0.5 if omitted. Splitting operations will be done in order."""
+H_to_lodders_help = "Load 'lodders_massfrac.dat' and redistribute hydrogen accordingly (only loads even elements)."
+convert_elem_help = """Convert first comma-separated sequence of elements to even split of second sequence. The
+        first and second sequence should be separated by a colon. Can supply multiple items to do multiple
+        conversions."""
 
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('datasets', nargs='*', help=datasets_help)
 parser.add_argument('-l', '--level', type=int, default=0, help=level_help)
 parser.add_argument('--add_decay_prod', action='store_true', help=add_decay_prod_help)
-parser.add_argument('--split_Ni', nargs=3, metavar=('ELEM', 'ELEM_FRAC', 'NI_FRAC'), help=split_Ni_help)
+parser.add_argument('--split_elem', nargs='+', help=split_elem_help)
+parser.add_argument('--H_to_lodders', action='store_true', help=H_to_lodders_help)
+parser.add_argument('--convert_elem', nargs='+', help=convert_elem_help)
 
 args = parser.parse_args()
 
@@ -46,6 +54,36 @@ def flatten(seq):
     for subseq in seq:
         for item in subseq:
             yield item
+            
+class MassFracTransform:
+    
+    def __init__(self, func):
+        
+        self.func = func
+        
+    def __call__(self, ad):
+        
+        return self.func(ad)
+        
+    def __add__(self, other):
+        
+        return self.__class__(lambda ad: self(ad) + other(ad))
+        
+    def __mul__(self, other):
+        
+        return self.__class__(lambda ad: self(ad) * other(ad))
+        
+    @classmethod
+    def mfrac_accessor(cls, field):
+    
+        def get_mfrac(ad):
+            return ad.field_data(field, units=False)
+        return cls(get_mfrac)
+    
+    @classmethod
+    def float_mapping(cls, f=0.0):
+        
+        return cls(lambda x: f)
  
 ##################################################
 # Setup for determining elements and composition #
@@ -54,6 +92,7 @@ def flatten(seq):
 xfilt = lambda f: f.startswith("X(") and f.endswith(")")
 fields = map(lambda f: f[1], ts[0].field_list)
 mfrac_fields = list(filter(xfilt, fields))
+mfrac_ops = dict()
 
 # A few default atomic weights
 def_A = {'h': 1, 'he': 4, 'c': 12, 'o': 16, 'si': 28, 'ni': 56}
@@ -68,35 +107,106 @@ spec_names = map(lambda s: s[2:-1].lower(), mfrac_fields)
 spec_names = map(pad_spec_name, spec_names)
 nuclides = list(map(au.Nuclide, spec_names))
 
+for i in range(len(nuclides)):
+    mfrac_ops[nuclides[i]] = MassFracTransform.mfrac_accessor(mfrac_fields[i])
+
+if args.split_elem:
+
+    for item in args.split_elem:
+    
+        if item.count(':') == 2:
+            base_elem, prod_elem, frac_conv = item.split(':')
+            frac_conv = float(frac_conv)
+        else:
+            base_elem, prod_elem = item.split(':')
+            frac_conv = 0.5
+            
+        base_elem = au.Nuclide(base_elem)
+        prod_elem = au.Nuclide(prod_elem)
+
+        i_base = nuclides.index(base_elem)
+
+        if mfrac_fields[i_base] is not None:
+            prod_op = MassFracTransform.mfrac_accessor(mfrac_fields[i_base])
+        else:
+            prod_op = mfrac_ops[base_elem]
+        prod_op *= MassFracTransform.float_mapping(frac_conv)
+            
+        if prod_elem not in mfrac_ops:
+            nuclides.append(prod_elem)
+            mfrac_fields.append(None)
+            mfrac_ops[prod_elem] = prod_op
+        else:
+            mfrac_ops[prod_elem] += prod_op
+        mfrac_ops[base_elem] *= MassFracTransform.float_mapping(1.0 - frac_conv)
+    
+if args.H_to_lodders:
+    
+    lodders_Z = []
+    lodders_mfrac = []
+    
+    with open('lodders_massfrac.dat', 'r') as file:
+        for i, line in enumerate(file):
+            if (i != 0) and (i % 2 == 0):
+                continue # Keep only even elements and hydrogen
+            Z, mfrac = line.strip().split()
+            if int(Z) > 28:
+                break
+            lodders_Z.append(int(Z))
+            lodders_mfrac.append(float(mfrac))
+    lodders_mfrac = np.array(lodders_mfrac)
+    
+    lodders_mfrac /= lodders_mfrac.sum()
+    i_H = nuclides.index((1, 0))
+    for i, Z in enumerate(lodders_Z):
+        if Z == 1:
+            elem = au.Nuclide((1, 0))
+            mfrac_ops[elem] *= MassFracTransform.float_mapping(lodders_mfrac[i])
+        else:
+            elem = au.Nuclide((Z, Z))
+            if elem not in mfrac_ops:
+                nuclides.append(elem)
+                mfrac_fields.append(None)
+                mfrac_ops[elem] = MassFracTransform.float_mapping()
+            elem_op = MassFracTransform.mfrac_accessor(mfrac_fields[i_H])
+            elem_op *= MassFracTransform.float_mapping(lodders_mfrac[i])
+            mfrac_ops[elem] += elem_op
+
+if args.convert_elem:
+    
+    for pair in args.convert_elem:
+    
+        elems = pair.split(':')
+        elems = [list(map(au.Nuclide, seq.split(','))) for seq in elems]
+        mfrac_sum_acc = sum((mfrac_ops[elem] for elem in elems[0]), start=MassFracTransform.float_mapping())
+    
+        for elem in elems[1]:
+            if elem not in mfrac_ops:
+                nuclides.append(elem)
+                mfrac_fields.append(None)
+                mfrac_ops[elem] = MassFracTransform.float_mapping()
+            mfrac_ops[elem] += mfrac_sum_acc * MassFracTransform.float_mapping(1. / len(elems[1]))
+    
+        for elem in elems[0]:
+            i_elem = nuclides.index(elem)
+            del nuclides[i_elem]
+            del mfrac_fields[i_elem]
+            del mfrac_ops[elem]
+
 if args.add_decay_prod:
 
     Fe56 = au.Nuclide('Fe56')
     Co56 = au.Nuclide('Co56')
 
-    if Fe56 not in nuclides:
+    if Fe56 not in mfrac_ops:
         nuclides.append(Fe56)
-        mfrac_fields.append(None)
-    if Co56 not in nuclides:
+        mfrac_ops[Fe56] = MassFracTransform.float_mapping()
+    if Co56 not in mfrac_ops:
         nuclides.append(Co56)
-        mfrac_fields.append(None)
-
-if args.split_Ni:
-
-    elem_name, elem_frac, Ni_frac = args.split_Ni
-    elem = au.Nuclide(elem_name)
-    nuclides.append(elem)
-
-    i_Ni = nuclides.index((28, 28))
-    elem_frac = float(elem_frac)
-    Ni_frac = float(Ni_frac)
-    assert (elem_frac + Ni_frac) == 1.0
-
-    mfrac_fields.append((elem_frac, mfrac_fields[i_Ni]))
-    mfrac_fields[i_Ni] = (Ni_frac, mfrac_fields[i_Ni])
+        mfrac_ops[Co56] = MassFracTransform.float_mapping()
 
 idx = sorted(range(len(nuclides)), key=lambda i: nuclides[i])
 nuclides = [nuclides[i] for i in idx]
-mfrac_fields = [mfrac_fields[i] for i in idx]
 
 ##########################################
 # Loop and convert to Sedona model files #
@@ -121,14 +231,9 @@ for ds in ts:
     fout.create_dataset('Z', data=[n.Z for n in nuclides], dtype='i')
     fout.create_dataset('A', data=[n.A for n in nuclides], dtype='i')
     
-    comp = np.zeros((len(nuclides), *ad.ncells[:, args.level]), dtype=np.float64)
+    comp = np.empty((len(nuclides), *ad.ncells[:, args.level]), dtype=np.float64)
     for i in range(len(nuclides)):
-        if mfrac_fields[i] is not None:
-            if isinstance(mfrac_fields[i], tuple):
-                weight, field = mfrac_fields[i]
-            else:
-                weight, field = 1.0, mfrac_fields[i]
-            comp[i, ...] = weight * ad.field_data(field, units=False)
+        comp[i, ...] = mfrac_ops[nuclides[i]](ad)
     comp = np.transpose(comp, axes=(*range(1, ad.dim+1), 0))
     fout.create_dataset('comp', data=comp, dtype='d')
     
