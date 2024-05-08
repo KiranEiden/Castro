@@ -10,6 +10,8 @@ parser.add_argument('datafiles', nargs="*")
 parser.add_argument("--P_0", nargs="*", type=float)
 parser.add_argument("--t_ramp", nargs="*", type=float)
 parser.add_argument("--E_sn")
+parser.add_argument("-L", "--labels", nargs="*")
+parser.add_argument("--no_partition", action='store_true')
 args = parser.parse_args()
 
 prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -32,6 +34,11 @@ elif len(args.t_ramp) == 1:
     args.t_ramp = args.t_ramp * len(args.datafiles)
 else:
     assert len(args.t_ramp) == len(args.datafiles)
+    
+if not args.labels:
+    args.labels = [(s + " ms").strip() for s in map(str, args.P_0)]
+else:
+    assert len(args.labels) == len(args.datafiles)
 
 for i, f in enumerate(args.datafiles):
 
@@ -68,8 +75,14 @@ for i, f in enumerate(args.datafiles):
             print("Total energy differs from theoretical value by more than 0.1%." +
                     f" Maximum difference is {delt[j]} at t = {t[j]}.")
 
-    plt.scatter(t/t_m, E_ej/E_tot, label=r"$E_{\mathrm{ej}}$" + f" ({P_0} ms)", marker=".", color=colors[i])
-    plt.scatter(t/t_m, 1. - E_ej/E_tot, label=r"$E_{\mathrm{of}}$" + f" ({P_0} ms)", marker="^", color=colors[i])
+    if args.no_partition:
+        x = t/t_m# / (args.E_sn/E_tot)
+        plt.plot(x, (E_ej + E_of), label=args.labels[i], color=colors[i])
+        plt.plot(x, (e_ej + e_of), linestyle=":", color=colors[i])
+        plt.plot(x, (E_ej + E_of) - (e_ej + e_of), linestyle="--", color=colors[i])
+    else:
+        plt.scatter(t/t_m, E_ej/E_tot, label=r"$E_{\mathrm{ej}}$" + f" ({P_0} ms)", marker=".", color=colors[i])
+        plt.scatter(t/t_m, 1. - E_ej/E_tot, label=r"$E_{\mathrm{of}}$" + f" ({P_0} ms)", marker="^", color=colors[i])
     #plt.plot(t, np.ones_like(t)*1.97e52, color='black', linestyle="--", label=r"$E_{0,mag}$")
 
     #t_m = 2047.49866274
@@ -83,8 +96,12 @@ for i, f in enumerate(args.datafiles):
     # plt.plot(t, E)
     # plt.plot(t, x*E_emit + E[0])
 
-plt.xlabel(r"$t/t_{\mathrm{mag}}$")
-plt.ylabel("Energy Fraction")
+plt.xlabel(r"$\tilde{t}$")
+#plt.xlabel(r"$\tilde{t} / \tilde{E}_{\rm kin,ej}$")
+if not args.no_partition:
+    plt.ylabel("Energy Fraction")
+else:
+    plt.ylabel("E (erg)")
 
 plt.legend()
 
