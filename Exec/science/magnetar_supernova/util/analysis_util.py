@@ -722,40 +722,65 @@ class Nuclide:
         'og': 'oganesson'
      }
     
+    Z_to_elem = {v: k for k, v in elements.items()}
     name_to_sym = {v: k for k, v in sym_to_name.items()}
     
-    def __init__(self, string):
+    def __init__(self, obj):
+        
+        is_tup = isinstance(obj, tuple)
+        is_str = isinstance(obj, str)
+            
+        if not (is_tup or is_str):
+            raise ValueError("Nuclide contructor only accepts tuples and strings.")
         
         try:
-            
-            string = string.strip()
-            assert self.isnuclide(string)
-            
-            match = self.match_long(string)
-            
-            if match:
-                
-                self.name, self.A = match.groups()
-                self.name = self.name.lower()
-                self.sym = self.name_to_sym[self.name]
-                
+            if is_tup:
+                self._init_from_tuple(obj)
             else:
-                
-                match = self.match_short(string)
-                self.sym, self.A = match.groups()
-                self.sym = self.sym.lower()
-                self.name = self.sym_to_name[self.sym]
-                
-            self.A = int(self.A)
-            self.Z = self.elements[self.name]
-            self.N = self.A - self.Z
-            
-            assert self.N >= 0
-            
+                self._init_from_string(obj)
         except (ValueError, KeyError, AssertionError):
-            
-            raise ValueError("Invalid nuclide string: '{}'.".format(string)) from None
+            raise ValueError("Invalid nuclide representation: '{}'.".format(obj)) from None
 
+    
+    def _init_from_tuple(self, tup):
+        
+        self.Z, self.N = tup
+        
+        assert isinstance(self.Z, int)
+        assert isinstance(self.N, int)
+        assert self.Z > 0
+        assert self.N >= 0
+        
+        self.A = self.Z + self.N
+        self.name = self.Z_to_elem[self.Z]
+        self.sym = self.name_to_sym[self.name]
+        
+    def _init_from_string(self, string):
+        
+        string = string.strip()
+        assert self.isnuclide(string)
+        
+        match = self.match_long(string)
+        
+        if match:
+            
+            self.name, self.A = match.groups()
+            self.name = self.name.lower()
+            self.sym = self.name_to_sym[self.name]
+            
+        else:
+            
+            match = self.match_short(string)
+            self.sym, self.A = match.groups()
+            self.sym = self.sym.lower()
+            self.name = self.sym_to_name[self.sym]
+            
+        self.A = int(self.A)
+        self.Z = self.elements[self.name]
+        self.N = self.A - self.Z
+        
+        assert self.N >= 0
+    
     
     def __repr__(self):
         
