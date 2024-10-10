@@ -109,7 +109,7 @@ problem.R_mag = 1.0
 # Sine of the inclination angle between the magnetic and rotational axes
 problem.sin_alph = 0.5
 # Magnetic field (in units of 10^{15} G)
-problem.B_mag = 1.0
+problem.B_mag = &!B_mag{1e15*gauss}
 # Magnetar moment of inertia (in units of 10^45 g cm^2)
 problem.I_mag = 1.0
 

@@ -23,6 +23,7 @@ parser.add_argument('-t0', type=float, default=0.1)
 parser.add_argument('-tramp', type=float, default=0.05)
 parser.add_argument('-eps', type=float, default=1e-8)
 parser.add_argument('-Pmag', type=float, default=1.0)
+parser.add_argument('-Bmag', type=float, default=1.0)
 parser.add_argument('-tmax', type=float, default=5.0)
 parser.add_argument('-fdep', type=float, default=0.03)
 parser.add_argument('-depscale', type=float, default=2.0)
@@ -56,8 +57,9 @@ v_w = args.vw * u.km / u.s
 R_max = args.Rmax * u.cm
 beta = args.beta
 P_mag = args.Pmag * u.ms
-t_m = (P_mag / (1*u.ms))**2 * 2047.49866274 * u.s
-E_0 = 1.97392088e52 * u.erg / ((P_mag / (1*u.ms))**2)
+B_mag = args.Bmag * 1e15 * u.gauss
+t_m = (args.Pmag / args.Bmag)**2 * 2047.49866274 * u.s
+E_0 = 1.97392088e52 * u.erg / (args.Pmag**2)
 t_0 = args.t0 * t_m
 t_ramp = args.tramp * t_m
 t_max = args.tmax * t_m
@@ -189,7 +191,7 @@ if args.out:
     
     with open(args.template, 'r') as f:
         contents = f.read()
-    pat = re.compile('&!(?P<var>\w+)(?:\{(?P<unit>[\w/]+)\})?')
+    pat = re.compile(r'&!(?P<var>\w+)(?:\{(?P<unit>[\w/*]+)\})?')
     new_contents = pat.sub(repl, contents)
     
     with open(args.out, 'w') as f:
