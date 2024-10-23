@@ -24,6 +24,11 @@ H_to_lodders_help = "Load 'lodders_massfrac.dat' and redistribute hydrogen accor
 convert_elem_help = """Convert first comma-separated sequence of elements to even split of second sequence. The
         first and second sequence should be separated by a colon. Can supply multiple items to do multiple
         conversions."""
+t0_help = "The initial time offset of the Castro simulation, in seconds."
+tscale_help = """Ratio of engine timescale to use for the output to engine timescale in the Castro simulation.
+        If tscale != 1.0, the time, lengthscales, density, etc. will be rescaled to approximate the result of
+        a Castro simulation with the output engine timescale, assuming the engine-to-ejecta energy ratio is
+        held constant."""
 
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('datasets', nargs='*', help=datasets_help)
@@ -32,6 +37,8 @@ parser.add_argument('--add_decay_prod', action='store_true', help=add_decay_prod
 parser.add_argument('--split_elem', nargs='+', help=split_elem_help)
 parser.add_argument('--H_to_lodders', action='store_true', help=H_to_lodders_help)
 parser.add_argument('--convert_elem', nargs='+', help=convert_elem_help)
+parser.add_argument('--t0', type=float, default=0.0, help=t0_help)
+parser.add_argument('--tscale', type=float, default=1.0, help=tscale_help)
 
 args = parser.parse_args()
 
@@ -218,14 +225,19 @@ for ds in ts:
     
     ad = au.AMRData(ds, args.level)
     
+    tscale = args.tscale
+    rscale = args.tscale
+    rhoscale = 1. / args.tscale**3
+    escale = 1. / args.tscale**3
+    
     fout = h5py.File(f'model_{ds}.h5', 'w')
-    fout.create_dataset('time', data=[ds.current_time.d], dtype='d')
-    fout.create_dataset('rmin', data=ad.left_edge.d, dtype='d')
-    fout.create_dataset('dr', data=ad.dds[:, args.level].d, dtype='d')
-    fout.create_dataset('rho', data=ad.field_data('density', units=False), dtype='d')
+    fout.create_dataset('time', data=[(ds.current_time.d + args.t0)*tscale], dtype='d')
+    fout.create_dataset('rmin', data=ad.left_edge.d*rscale, dtype='d')
+    fout.create_dataset('dr', data=ad.dds[:, args.level].d*rscale, dtype='d')
+    fout.create_dataset('rho', data=ad.field_data('density', units=False)*rhoscale, dtype='d')
     erad = ad.field_data('pressure', units=False) * 3.
     fout.create_dataset('temp', data=(erad / arad)**0.25, dtype='d')
-    fout.create_dataset('erad', data=erad, dtype='d')
+    fout.create_dataset('erad', data=erad*escale, dtype='d')
     fout.create_dataset('vx', data=ad.field_data('x_velocity', units=False), dtype='d')
     fout.create_dataset('vz', data=ad.field_data('y_velocity', units=False), dtype='d')
     fout.create_dataset('Z', data=[n.Z for n in nuclides], dtype='i')
