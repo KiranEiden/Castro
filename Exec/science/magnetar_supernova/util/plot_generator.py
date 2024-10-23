@@ -73,7 +73,8 @@ aspect_help = "Aspect ratio to use for the plot axes (not the image). Can only b
 even_dim_help = """Adjust the image size in pixels in each dimension to the nearest multiple of two.
         At the time of writing, using this option necessitates saving the figure directly with the
         matplotlib interface, as yt resets the figure size at some point during the plot.save() call."""
-Pmag_help = "Magnetar period (in ms) to use for setting the magnetar timescale. Assumes B = 10^{15} Gauss."
+Pmag_help = "Magnetar period (in ms) to use for setting the magnetar timescale."
+Bmag_help = "Magnetar B-field (in units of 10^{15} G) to use for setting the magnetar timescale."
 use_mpi_help = """Whether to parallelize with MPI or not, assuming script was run with MPI. Requires
         analysis_util module to be present."""
 plugin_help = """Provide this argument to have yt load a plugin file. Can supply a filename to load
@@ -121,6 +122,7 @@ parser.add_argument('--window_size', type=float, default=8.0, help=window_size_h
 parser.add_argument('--aspect', type=float, default=None, help=aspect_help)
 parser.add_argument('--even_dim', action='store_true', help=even_dim_help)
 parser.add_argument('--Pmag', type=float, default=1.0, help=Pmag_help)
+parser.add_argument('--Bmag', type=float, default=1.0, help=Bmag_help)
 parser.add_argument('--use_mpi', action='store_true', help=use_mpi_help)
 parser.add_argument('--plugin', nargs='?', const="", help=plugin_help)
 parser.add_argument('--overwrite_image', type=int, metavar=('LEVEL',), help=overwrite_image_help)
@@ -374,9 +376,9 @@ def make_plot(ds, args, xlim, ylim, fname_pref=None):
         time_opt.setdefault('verticalalignment', 'top')
 
         reg = ds.current_time.units.registry
-        reg.add('tmag', base_value=(args.Pmag**2 * 2047.49866274), dimensions=u.dimensions.time,
+        reg.add('tmag', base_value=(args.Pmag**2 * 2047.49866274 / args.Bmag**2), dimensions=u.dimensions.time,
                 tex_repr="\\rm{t_{mag}}")
-        reg.add('teng', base_value=(args.Pmag**2 * 2047.49866274), dimensions=u.dimensions.time,
+        reg.add('teng', base_value=(args.Pmag**2 * 2047.49866274 / args.Bmag**2), dimensions=u.dimensions.time,
                 tex_repr="\\rm{t_{eng}}")
                 
         time_fmt = f"{{:.{args.time}{scistr}}}"
