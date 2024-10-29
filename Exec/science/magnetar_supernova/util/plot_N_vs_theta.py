@@ -13,23 +13,23 @@ args = parser.parse_args()
 if args.labels is not None:
     assert len(args.labels) == len(args.datafiles)
 
-for fname in args.datafiles:
+for i, fname in enumerate(args.datafiles):
     
-    ang, N, tau = np.loadtxt(fname, comments='#')
+    ang, N, tau = np.loadtxt(fname, comments='#').T
     t = 0.0
     with open(fname, 'r') as f:
         line = '#'
         for line in f:
             if not line.startswith('#'):
                 break
-            if line.contains("time"):
+            if "time" in line:
                 t = float(line.split(':')[1].strip())
     
-    if args.labels is not None:
+    if args.labels is None:
         label = f"t + t0 = {t:.1f}"
     else:
         label = args.labels[i]
-    plt.plot(ang*180/np.pi, N * (1. + t/t0)**2, label=label)
+    plt.plot(ang*180/np.pi, N * (1. + t/args.t0)**2, label=label)
 
 plt.xlabel(r'$\theta~(^{\circ})$')
 plt.ylabel(r'$N (1 + t/t_0)^2~(\mathrm{cm^{-2}})$')
