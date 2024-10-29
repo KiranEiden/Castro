@@ -29,7 +29,7 @@ for i, fname in enumerate(args.datafiles):
         label = f"t = {t/args.teng:.2f}" + r"$t_{\mathrm{eng}}$"
     else:
         label = args.labels[i]
-    plt.plot(ang*180/np.pi, N * (0.1 + t/args.teng)**2, label=label)
+    plt.plot(ang*180/np.pi, N * (0.1 + t/args.teng)**2, label=label, linewidth=1)
 
 plt.xlabel(r'$\theta~(^{\circ})$')
 plt.ylabel(r'$N (\tilde{t}_0 + \tilde{t})^2~(\mathrm{cm^{-2}})$')
