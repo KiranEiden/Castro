@@ -10,7 +10,7 @@ parser.add_argument('--t0', type=float)
 parser.add_argument('--labels', nargs='*')
 args = parser.parse_args()
 
-if len(args.labels) > 0:
+if args.labels is not None:
     assert len(args.labels) == len(args.datafiles)
 
 for fname in args.datafiles:
@@ -25,7 +25,7 @@ for fname in args.datafiles:
             if line.contains("time"):
                 t = float(line.split(':')[1].strip())
     
-    if len(args.labels) == 0:
+    if args.labels is not None:
         label = f"t + t0 = {t:.1f}"
     else:
         label = args.labels[i]
