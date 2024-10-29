@@ -26,7 +26,7 @@ for i, fname in enumerate(args.datafiles):
                 t = float(line.split(':')[1].strip())
     
     if args.labels is None:
-        label = f"t + t0 = {t:.1f}"
+        label = f"t = {t:.1f}"
     else:
         label = args.labels[i]
     plt.plot(ang*180/np.pi, N * (0.1 + t/args.teng)**2, label=label)
