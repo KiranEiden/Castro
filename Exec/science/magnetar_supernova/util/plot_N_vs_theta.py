@@ -53,7 +53,7 @@ for i, fname in enumerate(args.datafiles):
 
 plt.xlabel(r'$\theta~(^{\circ})$')
 for axis in ax:
-    axis.ylabel(r'$N / \langle N \rangle$')
-    axis.yscale("log")
+    axis.set_ylabel(r'$N / \langle N \rangle$')
+    axis.set_yscale("log")
     axis.legend()
 fig.savefig("N_vs_theta.png", dpi=480)
