@@ -34,6 +34,12 @@ f_r		real		3.3333e-1_rt		y  #transition velocity coordinate
 
 T_ej  real  1.0e3_rt  y
 
+# parameters controlling density perturbations
+wn_fluct_1  real     0.0  y # wavenumber (spatial scale) of fluctuations for first sinusoid
+amp_fluct_1 real     0.0  y # amplitude of fluctuations before exponentiation for first sinusoid
+wn_fluct_2  real     0.0  y # wavenumber (spatial scale) of fluctuations for second sinusoid
+amp_fluct_2 real     0.0  y # amplitude of fluctuations before exponentiation for second sinusoid
+rand_seed integer   0   y # set to number > 0 to scale perturbations by uniform random number
 
 ## CSM PARAMETERS ##
 

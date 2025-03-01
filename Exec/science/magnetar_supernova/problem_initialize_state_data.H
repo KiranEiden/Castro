@@ -3,6 +3,7 @@
 
 #include <prob_parameters.H>
 #include <eos.H>
+#include <AMReX_Random.H>
 
 AMREX_GPU_HOST_DEVICE AMREX_INLINE
 void problem_initialize_state_data (int i, int j, int k,
@@ -58,7 +59,21 @@ void problem_initialize_state_data (int i, int j, int k,
   z = problo[2] + dx[2] * (static_cast<Real>(k) + 0.5_rt) - problem::center[2];
 #endif
 
-  Real r = std::sqrt(x*x + y*y + z*z);
+  Real r = sqrt(x*x + y*y + z*z);
+#if AMREX_SPACEDIM == 3
+  Real theta = acos(z/r);
+  Real phi = acos(x / sqrt(x*x + y*y));
+#endif
+  
+  Real k_fluct_1 = problem::wn_fluct_1;
+  Real A_fluct_1 = problem::amp_fluct_1;
+  Real k_fluct_2 = problem::wn_fluct_2;
+  Real A_fluct_2 = problem::amp_fluct_2;
+  bool add_fluct = (k_fluct_1 > 0.0_rt) && (A_fluct_1 > 0.0_rt);
+  add_fluct = add_fluct || ((k_fluct_2 > 0.0_rt) && (A_fluct_2 > 0.0_rt));
+  bool rand_fluct = problem::rand_seed > 0;
+  Real drho_1 = 0.0_rt;
+  Real drho_2 = 0.0_rt;
 
   Real rho = 0.0_rt;
   Real T = 0.0_rt;
@@ -104,6 +119,22 @@ void problem_initialize_state_data (int i, int j, int k,
       T = problem::T_ej;
       v = v_t*(r/R_t);
     }
+    
+#if AMREX_SPACEDIM == 3
+    if(add_fluct)
+    {
+      drho_1 = rho * exp(A_fluct_1 * sin(k_fluct_1 * 2.0_rt*M_PI * r/R_csm) * sin(k_fluct_1 * theta) *
+          sin(k_fluct_1 * phi));
+      drho_2 = rho * exp(A_fluct_2 * sin(k_fluct_2 * 2.0_rt*M_PI * r/R_csm) * sin(k_fluct_2 * theta) *
+          sin(k_fluct_2 * phi));
+      if(rand_fluct)
+      {
+        drho_1 *= amrex::Random();
+        drho_2 *= amrex::Random();
+      }
+      rho += drho_1 + drho_2;
+    }
+#endif
   }
   else // CSM/ambient portion
   {
