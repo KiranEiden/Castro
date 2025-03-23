@@ -123,16 +123,16 @@ void problem_initialize_state_data (int i, int j, int k,
 #if AMREX_SPACEDIM == 3
     if(add_fluct)
     {
-      drho_1 = rho * exp(A_fluct_1 * sin(k_fluct_1 * 2.0_rt*M_PI * r/R_csm) * sin(k_fluct_1 * theta) *
-          sin(k_fluct_1 * phi));
-      drho_2 = rho * exp(A_fluct_2 * sin(k_fluct_2 * 2.0_rt*M_PI * r/R_csm) * sin(k_fluct_2 * theta) *
-          sin(k_fluct_2 * phi));
+      drho_1 = rho * (exp(A_fluct_1 * sin(k_fluct_1 * 2.0_rt*M_PI * r/R_csm) * sin(k_fluct_1 * theta) *
+          sin(k_fluct_1 * phi)) - 1.0_rt);
+      drho_2 = rho * (exp(A_fluct_2 * sin(k_fluct_2 * 2.0_rt*M_PI * r/R_csm) * sin(k_fluct_2 * theta) *
+          sin(k_fluct_2 * phi)) - 1.0_rt);
       if(rand_fluct)
       {
         drho_1 *= amrex::Random();
         drho_2 *= amrex::Random();
       }
-      rho += drho_1 + drho_2;
+      rho += 0.5 * (drho_1 + drho_2);
     }
 #endif
   }
