@@ -29,6 +29,7 @@ tscale_help = """Ratio of engine timescale to use for the output to engine times
         If tscale != 1.0, the time, lengthscales, density, etc. will be rescaled to approximate the result of
         a Castro simulation with the output engine timescale, assuming the engine-to-ejecta energy ratio is
         held constant."""
+wind_to_H1_help = "Set the composition of the wind to pure H1."
 
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('datasets', nargs='*', help=datasets_help)
@@ -37,6 +38,7 @@ parser.add_argument('--add_decay_prod', action='store_true', help=add_decay_prod
 parser.add_argument('--split_elem', nargs='+', help=split_elem_help)
 parser.add_argument('--H_to_lodders', action='store_true', help=H_to_lodders_help)
 parser.add_argument('--convert_elem', nargs='+', help=convert_elem_help)
+parser.add_argument('--wind_to_H1', action='store_true', help=wind_to_H1_help)
 parser.add_argument('--t0', type=float, default=0.0, help=t0_help)
 parser.add_argument('--tscale', type=float, default=1.0, help=tscale_help)
 
@@ -178,7 +180,7 @@ if args.H_to_lodders:
             elem_op = MassFracTransform.mfrac_accessor(mfrac_fields[i_H])
             elem_op *= MassFracTransform.float_mapping(lodders_mfrac[i])
             mfrac_ops[elem] += elem_op
-
+            
 if args.convert_elem:
     
     for pair in args.convert_elem:
@@ -212,6 +214,17 @@ if args.add_decay_prod:
         nuclides.append(Co56)
         mfrac_ops[Co56] = MassFracTransform.float_mapping()
 
+def get_wind_X(ad):
+    
+    return ad.field_data('X(He4)', units=False)
+    
+if args.wind_to_H1:
+    
+    H1 = au.Nuclide('H1')
+    if H1 not in mfrac_ops:
+        nuclides.append(H1)
+        mfrac_ops[H1] = MassFracTransform.float_mapping()
+
 idx = sorted(range(len(nuclides)), key=lambda i: nuclides[i])
 nuclides = [nuclides[i] for i in idx]
 
@@ -244,8 +257,12 @@ for ds in ts:
     fout.create_dataset('A', data=[n.A for n in nuclides], dtype='i')
     
     comp = np.empty((len(nuclides), *ad.ncells[:, args.level]), dtype=np.float64)
+    if args.wind_to_H1:
+        wind_X = get_wind_X(ad)
     for i in range(len(nuclides)):
         comp[i, ...] = mfrac_ops[nuclides[i]](ad)
+    if args.wind_to_H1:
+        comp[0, ...] = wind_X
     comp = np.transpose(comp, axes=(*range(1, ad.dim+1), 0))
     fout.create_dataset('comp', data=comp, dtype='d')
     

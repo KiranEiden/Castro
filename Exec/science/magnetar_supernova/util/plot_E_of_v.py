@@ -14,10 +14,11 @@ parser.add_argument('-n', '--nbins', type=int, default=100)
 parser.add_argument('-c', '--cmap')
 parser.add_argument('-C', '--colors', nargs='+')
 parser.add_argument('-L', '--labels', nargs='+')
-parser.add_argument('-o', '--out', default='E_of_v.png')
+parser.add_argument('-o', '--out', default='E_of_v.pdf')
 parser.add_argument('--logx', action='store_true')
 parser.add_argument('--logy', action='store_true')
 parser.add_argument('--shell_rad', nargs='+')
+parser.add_argument('--teng', type=float, default=2047.49826674)
 args = parser.parse_args()
 
 ts = args.datafiles
@@ -46,7 +47,7 @@ for i, ds in enumerate(ts):
     if args.labels:
         label = args.labels[i]
     else:
-        label = f"t = {ds.current_time}"
+        label = f"t = {ds.current_time.d/args.teng:.2f}" + r"$~t_{\mathrm{eng}}$"
     
     ad = au.AMRData(ds, args.level)
     
@@ -89,4 +90,4 @@ if args.logx:
 if args.logy:
     plt.yscale("log")
 plt.legend()
-plt.gcf().savefig(args.out)
+plt.gcf().savefig(args.out, dpi=480)

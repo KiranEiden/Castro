@@ -738,8 +738,8 @@ class Nuclide:
                 self._init_from_tuple(obj)
             else:
                 self._init_from_string(obj)
-        except (ValueError, KeyError, AssertionError):
-            raise ValueError("Invalid nuclide representation: '{}'.".format(obj)) from None
+        except (ValueError, KeyError, AssertionError) as err:
+            raise ValueError("Invalid nuclide representation: '{}'.".format(obj)) from err
 
     
     def _init_from_tuple(self, tup):

@@ -21,7 +21,7 @@ parser.add_argument('--summary', action='store_true')
 parser.add_argument('--no_calc', action='store_true')
 parser.add_argument('-of', '--outfile', default="shock_pos.h5")
 parser.add_argument('-od', '--outdir', default='')
-parser.add_argument('-t', '--thresh', type=float, default=0.2)
+parser.add_argument('-t', '--thresh', type=float, default=0.9)
 parser.add_argument('-n', '--num_ang', type=int, default=100)
 parser.add_argument('--teng', type=float)
 parser.add_argument('--label')
@@ -134,6 +134,8 @@ def write_dataset(times, theta, pos, ad):
     file.create_dataset("dx", data=ad.dds[:, args.level].d, dtype='d')
     file.create_dataset("domain_left_edge", data=ad.left_edge.d, dtype='d')
     file.create_dataset("domain_right_edge", data=ad.right_edge.d, dtype='d')
+    file.create_dataset("window_left_edge", data=[args.xlim[0], args.ylim[0]], dtype='d')
+    file.create_dataset("window_right_edge", data=[args.xlim[1], args.ylim[1]], dtype='d')
     pos_grp = file.create_group("shock_pos")
     pos_grp.create_dataset("r_peak", data=pos[0], dtype='d')
     pos_grp.create_dataset("r_inner", data=pos[1], dtype='d')
@@ -146,6 +148,8 @@ def write_dataset(times, theta, pos, ad):
     
 def main_serial():
     
+    ad = None
+
     if args.no_calc:
         for ds in ts:
             ad = au.AMRData(ds, args.level)
@@ -169,11 +173,13 @@ def main_serial():
             
         if args.summary:
             plot_summary(log_rho, str(ds))
-            
+    
     write_dataset(times, theta, pos, ad)
     
 def main_parallel():
     
+    ad = None
+
     if args.no_calc:
         for ds in ts:
             ad = au.AMRData(ds, args.level)

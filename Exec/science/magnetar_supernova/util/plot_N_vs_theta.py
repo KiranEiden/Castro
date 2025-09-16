@@ -37,7 +37,7 @@ for i, fname in enumerate(args.datafiles):
                 t = float(line.split(':')[1].strip())
     
     if args.labels is None:
-        label = f"t = {t/args.teng:.2f}" + r"$t_{\mathrm{eng}}$"
+        label = f"t = {t/args.teng:.2f}" + r"$~t_{\mathrm{eng}}$"
     else:
         label = args.labels[i]
 
@@ -56,4 +56,4 @@ for axis in ax:
     axis.set_ylabel(r'$N / \langle N \rangle$')
     axis.set_yscale("log")
     axis.legend()
-fig.savefig("N_vs_theta.png", dpi=480)
+fig.savefig("N_vs_theta.pdf", dpi=480)

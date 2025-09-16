@@ -33,11 +33,11 @@ print("Will load the following files: {}\n".format(ts))
 tf = lambda file: yt.load(file.rstrip('/'), hint='CastroDataset')
 ts = map(tf, ts)
 
-def plot_avg_vel_prof(ds):
+def plot_avg_rho_prof(ds):
     
-    print(f"Plotting angle-averaged velocity profile for {ds}.")
+    print(f"Plotting angle-averaged density profile for {ds}.")
     
-    avg, r1d = au.get_avg_prof_2d(ds, args.nplot, field='magvel', level=args.level, return_r=True)
+    avg, r1d = au.get_avg_prof_2d(ds, args.nplot, field='density', level=args.level, return_r=True)
     
     if args.time_offset is not None:
         x = r1d / (ds.current_time.d + args.time_offset)
@@ -46,25 +46,25 @@ def plot_avg_vel_prof(ds):
         x = r1d
         xlabel = r"$R$ [cm]"
     
-    plt.plot(x, avg, label=f"t = {(ds.current_time.d/args.teng):.2f}" + r"$~\mathrm{t_{eng}}$")
+    plt.plot(x, avg, label=f"t = {ds.current_time.d/args.teng:.2f}" + r"$~\mathrm{t_{eng}}$")
     
     plt.xlabel(xlabel)
-    plt.ylabel(r"$\bar{u}$ [cm/s]")
+    plt.ylabel(r"$\bar{\rho}$ [$\mathrm{g~cm^{-3}}$]")
     plt.xscale("log")
     plt.yscale("log")
 
 for ds in ts:
     
     if args.no_avg:
-        au.plot_prof_2d(ds, args.nplot, "magvel", ylabel="u [cm/s]", log=True)
+        au.plot_prof_2d(ds, args.nplot, "density", ylabel=r"$\rho$ [$\mathrm{g~cm^{-3}}$]", log=True)
     else:
-        plot_avg_vel_prof(ds)
+        plot_avg_rho_prof(ds)
         
     if not args.single_plot:
-        plt.savefig(f"vel_prof_{ds}.png")
+        plt.savefig(f"rho_prof_{ds}.png")
         plt.gcf().clear()
 
 if args.single_plot:
     plt.legend()
-    plt.savefig("vel_prof.png")
+    plt.savefig("rho_prof.png")
     plt.gcf().clear()

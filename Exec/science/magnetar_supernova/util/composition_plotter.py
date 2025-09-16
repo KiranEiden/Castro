@@ -86,8 +86,7 @@ for ds in ts:
 
     if args.plot_avg_prof is not None:
         
-        vol = np.pi * ((r+dr/2)**2 - (r-dr/2)**2) * dz
-        cell_mass = ad['density'].d * vol
+        rho_sinth = ad['density'].d * r / np.sqrt(r**2 + z**2)
     
     if args.xlim or args.ylim:
         
@@ -105,7 +104,8 @@ for ds in ts:
         X_O = make_slc(X_O)
         X_Ni = make_slc(X_Ni)
         X_He = make_slc(X_He)
-        cell_mass = make_slc(cell_mass)
+        if args.plot_avg_prof is not None:
+            rho_sinth = make_slc(rho_sinth)
         
     small = np.array([1e-5, 1e-5, 1e-5])
     large = np.array([1.0, 1.0, 1.0])
@@ -113,6 +113,12 @@ for ds in ts:
     logmin = np.log10(small)
     logmax = np.log10(large)
     logrange = logmax - logmin
+    
+    plt.rc('axes', labelsize=16)
+    plt.rc('axes', titlesize=16)
+    plt.rc('xtick', labelsize=14)
+    plt.rc('ytick', labelsize=14)
+    plt.rc('legend', fontsize=14)
         
     if args.plot_avg_prof is not None:
         
@@ -120,23 +126,23 @@ for ds in ts:
             opt = get_argdict(args.plot_avg_prof)
         else:
             opt = dict()
-        
-        H_prof = au.get_avg_prof_2d(ds, 100, r, z, X_H, weight_data=cell_mass)
-        O_prof = au.get_avg_prof_2d(ds, 100, r, z, X_O, weight_data=cell_mass)
-        Ni_prof = au.get_avg_prof_2d(ds, 100, r, z, X_Ni, weight_data=cell_mass)
-        He_prof = au.get_avg_prof_2d(ds, 100, r, z, X_He, weight_data=cell_mass)
+       
+        H_prof = au.get_avg_prof_2d(ds, 100, r, z, X_H, weight_data=rho_sinth)
+        O_prof = au.get_avg_prof_2d(ds, 100, r, z, X_O, weight_data=rho_sinth)
+        Ni_prof = au.get_avg_prof_2d(ds, 100, r, z, X_Ni, weight_data=rho_sinth)
+        He_prof = au.get_avg_prof_2d(ds, 100, r, z, X_He, weight_data=rho_sinth)
 
         if args.time_offset is not None:
             x = r[:, 0] / (ds.current_time.d + args.time_offset)
-            xlabel = r"$x/(t + t_0)$ [cm/s]"
+            xlabel = r"$R/(t + t_0)$ (cm/s)"
         else:
             x = r[:, 0]
-            xlabel = r"$x$ [cm]"
+            xlabel = r"$R$ (cm)"
         
-        plt.plot(x, H_prof, label=r"$^{1}\mathrm{H}$")
-        plt.plot(x, O_prof, label=r"$^{16}\mathrm{O}$")
-        plt.plot(x, Ni_prof, label=r"$^{56}\mathrm{Ni}$")
-        plt.plot(x, He_prof, label=r"$^{4}\mathrm{He}$")
+        plt.plot(x, H_prof, label=r"$X_{\mathrm{env}}$")
+        plt.plot(x, O_prof, label=r"$X_{\mathrm{ims}}$")
+        plt.plot(x, Ni_prof, label=r"$X_{\mathrm{core}}$")
+        plt.plot(x, He_prof, label=r"$X_{\mathrm{wind}}$")
         
         plt.xlabel(xlabel)
         plt.ylabel(r"Average Mass Fraction")
@@ -146,20 +152,26 @@ for ds in ts:
             plt.xlim(x.min(), float(opt['xmax']))
         plt.yscale("log")
         plt.ylim(small.min(), 1.2)
-        plt.legend(loc="lower right")
+        if ds.current_time.d < 1e4:
+            plt.legend(loc="lower right")
+        else:
+            plt.legend(loc="lower center")
         
-        plt.savefig(f'avg_comp_prof_{ds}.png')
+        plt.savefig(f'avg_comp_prof_{ds}.pdf', dpi=480, bbox_inches='tight')
         plt.gcf().clear()
      
     if not args.no_rgb:
 
-        red = to_color(X_H, 0, small, logmin, logrange)
+        red = to_color(X_He, 0, small, logmin, logrange)
         grn = to_color(X_O, 1, small, logmin, logrange)
         blu = to_color(X_Ni, 2, small, logmin, logrange)
 
         rgb = np.stack((red, grn, blu), axis=2)
         plt.imshow(np.swapaxes(rgb, 0, 1), extent=[r[0,0], r[-1,0], z[0,0], z[0,-1]])
-        plt.xlabel("r [cm]")
-        plt.ylabel("z [cm]")
-        plt.savefig(f"composition_{ds}.png")
+        plt.xlabel("r (cm)")
+        plt.ylabel("z (cm)")
+        plt.gcf().set_size_inches((6.85, 9.2))
+        xpos = 1.0 - (0.9 * (1.0 - (5.5e11/1.2e12)))
+        plt.text(xpos*7.5e13, (1.075e12/1.2e12)*7.5e13, r"$5.00~\mathrm{t_{eng}}$ (2.84 hr)", color='white', fontsize="large")
+        plt.savefig(f"composition_{ds}.pdf", dpi=480)
         plt.gcf().clear()
