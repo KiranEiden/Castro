@@ -1,12 +1,12 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 1.02374933137e+04
+stop_time = 255.9373328425
 
 # PROBLEM SIZE & GEOMETRY
 geometry.is_periodic =  0  0
 geometry.coord_sys   =  1       # cylindrical coordinates
-geometry.prob_lo     =  0.0     -7.50e+13
-geometry.prob_hi     =  7.50e+13  7.50e+13
+geometry.prob_lo     =  0.0     -5.00e+12
+geometry.prob_hi     =  5.00e+12  5.00e+12
 amr.n_cell           =  256 512
 
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
@@ -30,7 +30,7 @@ castro.cfl            = 0.5     # cfl number for hyperbolic system
 castro.init_shrink    = 0.01    # scale back initial timestep
 castro.change_max     = 1.1     # maximum increase in dt over successive steps
 castro.max_subcycles  = 128
-castro.max_dt = 20.4749866274
+castro.max_dt = 1.2796866642125
 
 # DIAGNOSTICS & VERBOSITY
 castro.sum_interval   = 1       # timesteps between computing mass
@@ -54,7 +54,7 @@ problem.bubble_tagging_level = 3
 problem.refine_scale_ej = 1.5
 problem.refine_scale_buf = 1.2
 problem.refine_scale_bub = 1.2
-problem.refine_timescale_bub = 140.7841413904648
+problem.refine_timescale_bub = 5.132591321162164
 problem.ej_tag_vel = 3e9
 
 amr.refinement_indicators = abar
@@ -67,11 +67,11 @@ amr.refine.abar.field_name = abar
 amr.check_int = 250    # number of timesteps between checkpoints
 
 # PLOTFILES
-amr.plot_per = 511.874665685
+amr.plot_per = 31.9921666053125
 amr.derive_plot_vars=ALL
 
 amr.small_plot_file = smallplt   # root name of plotfile
-amr.small_plot_per = 20.4749866274 # number of seconds between plotfiles
+amr.small_plot_per = 1.2796866642125 # number of seconds between plotfiles
 amr.small_plot_vars = density
 amr.derive_small_plot_vars = x_velocity y_velocity pressure
 
@@ -79,46 +79,43 @@ eos.eos_gamma = 1.3333333333e0
 
 # PROBLEM PARAMETERS
 problem.m_0 = 4.0
-problem.r_0 = 1.248381749071669e+12
+problem.r_0 = 7.954924229722919e+10
 problem.beta = 0.02
 problem.T_ej = 1e3
-problem.f_r = 0.0983394309480676
+problem.f_r = 0.09645373476058364
 problem.d = 1
 problem.n = 10
 problem.v_w = 10.0
 problem.Mdot = 1.00e-05
-problem.f_a = 1.39893729168319
+problem.f_a = 19.17118878425275
 problem.s = 0
 problem.delt = 0.0
 problem.depscale = 2.0
-problem.p_dep = 20.59158637920377
-problem.frac_lum_base = 0.8616765576317266
-problem.mass_mult = 7.5
-problem.eq_ang = 0.04363323129985824
+problem.p_dep = 23.58731827811019
+problem.frac_lum_base = 0.878403829223137
+problem.mass_mult = 1.697540542687643
 
 # MAGNETAR PARAMETERS
 castro.add_ext_src = 1
 # Approximate magnetar turn-on time (in s)
-problem.t_mag_act = 102.374933137
+problem.t_mag_act = 6.398433321062501
 # Fraction of of initial ejecta radius to use when defining deposition region
 problem.f_dep = 0.03
 # Initial magnetar period (in ms)
-problem.P_0 = 2.8284271247461903
+problem.P_0 = 0.25
 # Magnetar radius (in units of 10^6 cm; used in energy/luminosity calculations)
-problem.R_mag = 2.0
+problem.R_mag = 1.0
 # Sine of the inclination angle between the magnetic and rotational axes
 problem.sin_alph = 0.5
 # Magnetic field (in units of 10^{15} G)
 problem.B_mag = 1.0
 # Magnetar moment of inertia (in units of 10^45 g cm^2)
-problem.I_mag = 8.0
-# Index determining injection rate decay
-problem.k_eng = 1.6666666667
+problem.I_mag = 1.0
 
 castro.do_grav = 1
 gravity.gravity_type = MonopoleGrav
 castro.use_point_mass = 1
-castro.point_mass = 5.00e+33
+castro.point_mass = 2.50e+33
 castro.point_mass_fix_solution = 0
 
 castro.abundance_failure_rho_cutoff = 1.e200
