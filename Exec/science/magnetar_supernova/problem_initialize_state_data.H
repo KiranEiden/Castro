@@ -22,6 +22,8 @@ void problem_initialize_state_data (int i, int j, int k,
   Real n = problem::n;
   Real d = problem::d;
   Real s = problem::s;
+  
+  int dens_ang_var = problem::dens_ang_var;
 
   Real R_t  = problem::f_r*problem::r_0;
   Real M_ej = problem::m_0*Msun;
@@ -45,8 +47,7 @@ void problem_initialize_state_data (int i, int j, int k,
   
   Real rho_0 = 5.01410457e19_rt * problem::Mdot / problem::v_w / (R_csm*R_csm);
   Real rho_a = problem::f_a*rho_0;
-
-
+  
   Real x = problo[0] + dx[0] * (static_cast<Real>(i) + 0.5_rt) - problem::center[0];
 
   Real y = 0.0;
@@ -110,6 +111,18 @@ void problem_initialize_state_data (int i, int j, int k,
   if(r < R_csm)
   {
     rho = rho0_ej;
+    if(dens_ang_var == 1)
+    {
+      Real sin_th = x/r;
+      rho *= 1.5_rt * sin_th*sin_th;
+      if(rho < rho_a) rho = rho_a;
+    }
+    else if(dens_ang_var == 2)
+    {
+      Real cos_th = y/r;
+      rho *= 3.0_rt * cos_th*cos_th;
+      if(rho < rho_a) rho = rho_a;
+    }
 
     if(problem::pl_ej > 0)
     {

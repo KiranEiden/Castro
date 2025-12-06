@@ -41,6 +41,9 @@ wn_fluct_2  real     0.0  y # wavenumber (spatial scale) of fluctuations for sec
 amp_fluct_2 real     0.0  y # amplitude of fluctuations before exponentiation for second sinusoid
 rand_seed integer   0   y # set to number > 0 to scale perturbations by uniform random number
 
+# angular variation in density (0 => none, 1 => sin^2 \theta, 2 => cos^2 \theta)
+dens_ang_var integer  0  y
+
 ## CSM PARAMETERS ##
 
 # CSM mass eta=Mcsm/Mej
