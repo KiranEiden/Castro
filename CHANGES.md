@@ -1,3 +1,43 @@
+# 24.04
+
+  * Some clang-tidy fixes (#2779, #2780, #2781, #2784, #2786, #2787, #2790,
+    #2791, #2792, #2793, #2797, #2798, #2799, #2800, #2801, #2804)
+
+  * Fix species initialization in the Detonation problem (#2806)
+    and let it work with NSE (#2765)
+
+  * Sync up with AMReX changes (#2794)
+
+  * wdmerger now reports composition of initial stars (#2767)
+
+  * flame_wave now checks if the `atm_delta` is too small (#2782)
+    and stores X(ash) (#2773)
+
+  * a bounds issue in the true SDC integration was fixed (#2775)
+
+# 24.03
+
+  * Documentation updates (#2742, #2752, #2753)
+
+  * Fix some code warnings (#2737)
+
+  * Fixed the exact Riemann solver compilation (#2745)
+
+  * Fix an issue with large kernel sizes with ROCm in the reduction code
+    in the reactions (#2749)
+
+# 24.02
+
+  * Lot's of code fixes from coverity and clang-tidy (#2736, #2734,
+    #2735, #2731, #2732, #2733)
+
+  * Fix the boundary condition logic at a wall for Detonation (#2722)
+
+  * Reimplement the shock detection algorithm to account for sources
+    and do a better job in multidimensions (#2711, #2710, #2709, #2704)
+
+  * Start the process of moving the runtime parameters to structs (#2688)
+
 # 24.01
 
   * An option for unlimited PPM reconstruction was added (#2670)
