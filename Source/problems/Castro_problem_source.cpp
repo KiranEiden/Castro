@@ -4,7 +4,7 @@
 using namespace amrex;
 
 void
-Castro::construct_old_ext_source(MultiFab& source, MultiFab& state_in, Real time, Real dt)
+Castro::construct_old_ext_source(MultiFab& source, const MultiFab& state_in, Real time, Real dt)
 {
     const Real strt_time = ParallelDescriptor::second();
 
@@ -24,8 +24,8 @@ Castro::construct_old_ext_source(MultiFab& source, MultiFab& state_in, Real time
 
     if (verbose > 1)
     {
-        const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-        Real      run_time = ParallelDescriptor::second() - strt_time;
+        const int IOProc = ParallelDescriptor::IOProcessorNumber();
+        amrex::Real run_time = ParallelDescriptor::second() - strt_time;
 
 #ifdef BL_LAZY
         Lazy::QueueReduction( [=] () mutable {
@@ -42,7 +42,7 @@ Castro::construct_old_ext_source(MultiFab& source, MultiFab& state_in, Real time
 
 
 void
-Castro::construct_new_ext_source(MultiFab& source, MultiFab& state_old, MultiFab& state_new, Real time, Real dt)
+Castro::construct_new_ext_source(MultiFab& source, const MultiFab& state_old, const MultiFab& state_new, Real time, Real dt)
 {
     const Real strt_time = ParallelDescriptor::second();
 
@@ -95,8 +95,8 @@ Castro::construct_new_ext_source(MultiFab& source, MultiFab& state_old, MultiFab
 
     if (verbose > 1)
     {
-        const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-        Real      run_time = ParallelDescriptor::second() - strt_time;
+        const int IOProc = ParallelDescriptor::IOProcessorNumber();
+        amrex::Real run_time = ParallelDescriptor::second() - strt_time;
 
 #ifdef BL_LAZY
         Lazy::QueueReduction( [=] () mutable {

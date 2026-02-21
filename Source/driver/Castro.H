@@ -6,7 +6,9 @@
 // runtime parameters
 #include <castro_params.H>
 #include <prob_parameters.H>
+#include <Castro_io.H>
 #include <Castro_util.H>
+#include <timestep.H>
 
 using namespace castro;
 
@@ -15,10 +17,6 @@ using namespace castro;
 #endif
 
 #include <fundamental_constants.H>
-
-constexpr int HISTORY_SIZE=40;
-constexpr int PSTAR_BISECT_FACTOR = 5;
-
 
 #include <AMReX_BC_TYPES.H>
 #include <AMReX_AmrLevel.H>
@@ -53,33 +51,33 @@ constexpr int PSTAR_BISECT_FACTOR = 5;
 using std::istream;
 using std::ostream;
 
-enum StateType { State_Type = 0,
+enum StateType : std::uint8_t {
+               State_Type = 0,
 #ifdef RADIATION
-                 Rad_Type,
+               Rad_Type,
 #endif
 #ifdef GRAVITY
-                 PhiGrav_Type,
-                 Gravity_Type,
+               PhiGrav_Type,
+               Gravity_Type,
 #endif
-                 Source_Type,
+               Source_Type,
 #ifdef REACTIONS
-                 Reactions_Type,
+               Reactions_Type,
 #endif
 #ifdef MHD
                Mag_Type_x,
                Mag_Type_y,
                Mag_Type_z,
 #endif
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
-                 Simplified_SDC_React_Type
-#endif
+               Simplified_SDC_React_Type
 #endif
 };
 
 // Create storage for all source terms.
 
-enum sources { thermo_src = 0,
+enum sources : std::uint8_t {
+               thermo_src = 0,
 #ifdef DIFFUSION
                diff_src,
 #endif
@@ -102,11 +100,12 @@ enum sources { thermo_src = 0,
 
 // time integration method
 
-enum int_method { CornerTransportUpwind = 0,
-                  UnusedTimeIntegration,
-                  SpectralDeferredCorrections,
-                  SimplifiedSpectralDeferredCorrections
-                };
+enum int_method : std::uint8_t {
+    CornerTransportUpwind = 0,
+    UnusedTimeIntegration,
+    SpectralDeferredCorrections,
+    SimplifiedSpectralDeferredCorrections
+};
 
 // Struct that returns information about
 // why an advance failed.
@@ -522,7 +521,7 @@ public:
 /// @param state        MultiFab to check
 /// @param check_ghost  do we check the ghost cells?
 ///
-    static void check_for_nan(amrex::MultiFab& state, int check_ghost=0);
+    static void check_for_nan(const amrex::MultiFab& state, int check_ghost=0);
 
 
 #include <Castro_sources.H>
@@ -541,39 +540,6 @@ public:
 /// Estimate time step.
 ///
     amrex::Real estTimeStep (int is_new = 1);
-
-
-///
-/// Compute the CFL timestep
-///
-    ValLocPair<amrex::Real, IntVect> estdt_cfl (int is_new = 1);
-
-
-#ifdef MHD
-///
-/// Compute the CFL timestep
-///
-    ValLocPair<amrex::Real, IntVect>  estdt_mhd (int is_new = 1);
-#endif
-
-///
-/// Diffusion-limited timestep
-///
-    ValLocPair<amrex::Real, IntVect> estdt_temp_diffusion (int is_new = 1);
-
-#ifdef REACTIONS
-///
-/// Reactions-limited timestep
-///
-    ValLocPair<amrex::Real, IntVect> estdt_burning (int is_new = 1);
-#endif
-
-#ifdef RADIATION
-///
-/// Radiation hydro timestep
-///
-    amrex::Real estdt_rad (int is_new = 1);
-#endif
 
 ///
 /// Compute initial time step.
@@ -804,11 +770,11 @@ public:
 ///
     static void reset_internal_energy (const amrex::Box& bx,
 #ifdef MHD
-                                amrex::Array4<amrex::Real> const Bx,
-                                amrex::Array4<amrex::Real> const By,
-                                amrex::Array4<amrex::Real> const Bz,
+                                amrex::Array4<amrex::Real> const& Bx,
+                                amrex::Array4<amrex::Real> const& By,
+                                amrex::Array4<amrex::Real> const& Bz,
 #endif
-                                amrex::Array4<amrex::Real> const u);
+                                amrex::Array4<amrex::Real> const& u);
 
 
 #ifdef MHD
@@ -819,11 +785,11 @@ public:
 /// @param Bz       magnetic field in z
 /// @param state    the state to operate on
 ///
-    void add_magnetic_e (
-                         amrex::MultiFab& Bx,
-                         amrex::MultiFab& By,
-                         amrex::MultiFab& Bz,
-                         amrex::MultiFab& state);
+    static void add_magnetic_e (
+        amrex::MultiFab& Bx,
+        amrex::MultiFab& By,
+        amrex::MultiFab& Bz,
+        amrex::MultiFab& state);
 
 ///
 /// Check if divergence of B is zero at initialization
@@ -1138,7 +1104,7 @@ public:
 /// @param S        Current state
 /// @param time     current time
 ///
-    void define_new_center (amrex::MultiFab& S, amrex::Real time);
+    void define_new_center (const amrex::MultiFab& S, amrex::Real time);
     void write_center ();
 
 ///
@@ -1345,7 +1311,7 @@ protected:
 ///
 /// Flag for indicating that we want to save prev_state until the reflux.
 ///
-    bool keep_prev_state;
+    bool keep_prev_state{};
 
 
 #ifdef TRUE_SDC
@@ -1385,9 +1351,10 @@ protected:
 ///
     amrex::MultiFab             volume;
     amrex::Array<amrex::MultiFab,3> area;
-    amrex::MultiFab             dLogArea[1];
     amrex::Vector< amrex::Vector<amrex::Real> > radius;
-
+#if AMREX_SPACEDIM <= 2
+    amrex::Array<amrex::MultiFab,2> dLogArea;
+#endif
 
 ///
 /// For initialization of the C++ values of the runtime parameters
@@ -1409,8 +1376,6 @@ protected:
     static std::vector<int> err_list_ng;
     static int              num_err_list_default;
     static amrex::BCRec     phys_bc;
-    static int       NUM_GROW;
-    static int       NUM_GROW_SRC;
 
     static int         lastDtPlotLimited;
     static amrex::Real lastDtBeforePlotLimiting;
@@ -1422,8 +1387,8 @@ protected:
 
 
 ///
-/// for keeping track of the amount of CPU time used -- this will persist
-///     after restarts
+/// for keeping track of the amount of CPU or GPU time used -- this will persist
+/// after restarts
 ///
     static amrex::Real      previousCPUTimeUsed;
     static amrex::Real      startCPUTime;

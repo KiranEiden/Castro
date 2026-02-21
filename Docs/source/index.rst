@@ -21,6 +21,7 @@ https://github.com/amrex-astro/Castro
    mpi_plus_x
    FlowChart
    software
+   gpu
    problem_setups
    timestepping
    creating_a_problem
@@ -28,6 +29,7 @@ https://github.com/amrex-astro/Castro
    regridding
    visualization
    faq
+   performance
 
 .. toctree::
    :maxdepth: 1
@@ -75,4 +77,3 @@ Indices and tables
 .. * :ref:`modindex`
 
 * :ref:`search`
-

@@ -24,10 +24,15 @@ kernels themselves.  See `MFIter with Tiling
 for more information.
 
 The optimal number of OpenMP threads depends on the computer
-architecture, and some experimentation is needed.  Tiling works best
-with larger boxes, so increasing ``amr.max_grid_size`` can benefit
-performance.
+architecture, and some experimentation is needed.
 
+.. tip::
+
+   Tiling works best with larger boxes, so increasing
+   ``amr.max_grid_size`` can benefit performance.
+
+
+.. _sec:running_on_gpus:
 
 Running on GPUs
 ===============
@@ -47,11 +52,14 @@ GPU thread, to take advantage of the massive parallelism.  The
 Microphysics routines (EOS, nuclear reaction networks, etc.) also take
 advantage of GPUs, so entire simulations can be run on the GPU.
 
-Best performance is obtained with bigger boxes, so setting
-``amr.max_grid_size = 128`` and ``amr.blocking_factor = 32`` can give
-good performance.
+.. tip::
+
+   Best performance is obtained with bigger boxes, so setting
+   ``amr.max_grid_size = 128`` and ``amr.blocking_factor = 32`` can
+   give good performance.
 
 
+.. index:: amrex.the_arena_is_managed, amrex.abort_on_out_of_gpu_memory
 
 Castro / AMReX have an option to use managed memory for the GPU --
 this means that the data will automatically be migrated from host to
@@ -106,6 +114,19 @@ To enable this, compile with::
 
    to the ``make`` line or ``GNUmakefile``.
 
+.. note::
+
+   CUDA 11.2 and later can do link time optimization.  This can
+   increase performance by 10-30% (depending on the application), but
+   may greatly increase the compilation time.  This is disabled by
+   default.  To enable link time optimization, add:
+
+   .. code::
+
+      CUDA_LTO=TRUE
+
+   to the ``make`` line of ``GNUmakefile``.
+
 AMD GPUs
 --------
 
@@ -117,10 +138,40 @@ To enable this, compile with::
   USE_HIP = TRUE
 
 
+Printing Warnings from GPU Kernels
+==================================
+
+.. index:: USE_GPU_PRINTF
+
+Castro will output warnings if several assumptions are violated (often
+triggering a retry in the process).  On GPUs, printing from a kernel
+(using ``printf()``) can increase the number of registers a kernel needs,
+causing performance problems.  As a result, warnings are disabled by
+wrapping them in ``#ifndef AMREX_USE_GPU``.
+
+However, for debugging GPU runs, sometimes we want to see these
+warnings.  The build option ``USE_GPU_PRINTF=TRUE`` will enable these
+(by setting the preprocessor flag ``ALLOW_GPU_PRINTF``).
+
+.. note::
+
+   Not every warning has been enabled for GPUs.
+
+.. tip::
+
+   On AMD architectures, it seems necessary to use unbuffered I/O.  This
+   can be accomplished in the job submission script (for SLURM) by doing
+
+   ::
+
+      srun -u ./Castro...
+
+
+
+
 Working at Supercomputing Centers
 =================================
 
 Our best practices for running any of the AMReX Astrophysics codes
 at different supercomputing centers is produced in our workflow
 documentation: https://amrex-astro.github.io/workflow/
-

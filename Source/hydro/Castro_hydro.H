@@ -9,16 +9,6 @@
 #endif
 
 ///
-/// Calculate primitive variables from given conserved variables
-///
-/// @param u        MultiFab of conserved variables
-/// @param q        MultiFab to save primitive variables to
-/// @param qaux     MultiFab of auxiliary variables
-/// @param time     Current time
-///
-    void cons_to_prim(amrex::MultiFab& u, amrex::MultiFab& q, amrex::MultiFab& qaux, const amrex::Real time);
-
-///
 /// convert the conservative state cell averages to primitive cell
 /// averages with 4th order accuracy
 ///
@@ -89,7 +79,7 @@
                      amrex::Array4<amrex::Real> const& srcQ);
 
 ///
-/// the actual work routine that does the conversion of conserved to primtiive
+/// the actual work routine that does the conversion of conserved to primitive
 /// variables.
 ///
 /// @param bx        the box to operate over
@@ -118,19 +108,6 @@
                  amrex::Array4<amrex::Real> const& q_arr,
                  amrex::Array4<amrex::Real> const& qaux_arr);
 
-///
-/// compute the flattening coefficient.  This is 0 if we are in a shock and
-/// 1 if we are not applying any flattening
-///
-/// @param bx         the box to operate over
-/// @param q_arr      the primitive variable state
-/// @param flatn      the flattening coefficient
-/// @param pres_comp  index into q_arr of the pressure component
-///
-    static void uflatten(const amrex::Box& bx,
-                  amrex::Array4<amrex::Real const> const& q_arr,
-                  amrex::Array4<amrex::Real> const& flatn,
-                  const int pres_comp);
 
 ///
 /// A multidimensional shock detection algorithm
@@ -231,7 +208,8 @@
 /// @param qyp      right interface state in y, q_{i,j-1/2,k,R}
 /// @param qzm      left interface state in z, q_{i,j,k-1/2,L}
 /// @param qzp      right interface state in z, q_{i,j,k-1/2,R}
-/// @param dloga    the geometric factor d(log area)
+/// @param dlogaX   the geometric factor d(log area) in x (r) dir
+/// @param dlogaY   the geometric factor d(log area) in y (theta) dir
 /// @param dt       timestep
 ///
     void ctu_ppm_states(const amrex::Box& bx, const amrex::Box& vbx,
@@ -251,7 +229,10 @@
                         amrex::Array4<amrex::Real> const& qzp,
 #endif
 #if AMREX_SPACEDIM < 3
-                        amrex::Array4<amrex::Real const> const& dloga,
+                        amrex::Array4<amrex::Real const> const& dlogaX,
+#endif
+#if AMREX_SPACEDIM == 2
+                        amrex::Array4<amrex::Real const> const& dlogaY,
 #endif
                         const amrex::Real dt);
 
@@ -272,7 +253,8 @@
 /// @param qyp      right interface state in y, q_{i,j-1/2,k,R}
 /// @param qzm      left interface state in z, q_{i,j,k-1/2,L}
 /// @param qzp      right interface state in z, q_{i,j,k-1/2,R}
-/// @param dloga    the geometric factor d(log area)
+/// @param dlogaX   the geometric factor d(log area) in x (r) dir
+/// @param dlogaY   the geometric factor d(log area) in y (theta) dir
 /// @param dt       timestep
 ///
     void ctu_plm_states(const amrex::Box& bx, const amrex::Box& vbx,
@@ -292,7 +274,10 @@
                         amrex::Array4<amrex::Real> const& qzp,
 #endif
 #if AMREX_SPACEDIM < 3
-                        amrex::Array4<amrex::Real const> const& dloga,
+                        amrex::Array4<amrex::Real const> const& dlogaX,
+#endif
+#if AMREX_SPACEDIM == 2
+                        amrex::Array4<amrex::Real const> const& dlogaY,
 #endif
                         const amrex::Real dt);
 
@@ -314,7 +299,8 @@
 /// @param qyp      right interface state in y, q_{i,j-1/2,k,R}
 /// @param qzm      left interface state in z, q_{i,j,k-1/2,L}
 /// @param qzp      right interface state in z, q_{i,j,k-1/2,R}
-/// @param dloga    the geometric factor d(log area)
+/// @param dlogaX   the geometric factor d(log area) in x (r) dir
+/// @param dlogaY   the geometric factor d(log area) in y (theta) dir
 /// @param dt       timestep
 ///
     void ctu_ppm_rad_states(const amrex::Box& bx, const amrex::Box& vbx,
@@ -334,7 +320,10 @@
                             amrex::Array4<amrex::Real> const& qzp,
 #endif
 #if AMREX_SPACEDIM < 3
-                            amrex::Array4<amrex::Real const> const& dloga,
+                            amrex::Array4<amrex::Real const> const& dlogaX,
+#endif
+#if AMREX_SPACEDIM == 2
+                            amrex::Array4<amrex::Real const> const& dlogaY,
 #endif
                             const amrex::Real dt);
 #endif
@@ -350,7 +339,7 @@
 /// @param idir        coordinate direction (0 = x, 1 = y, 2 = z)
 /// @param q_arr       the primitive variable state
 /// @param flatn_arr   flattening coefficient
-/// @param dq          slope of the primtiive variables
+/// @param dq          slope of the primitive variables
 /// @param qm          left interface state, e.g., q_{i-1/2,j,k,L}
 /// @param qp          right interface state, e.g., q_{i-1/2,j,k,R}
 ///
@@ -400,6 +389,7 @@
 /// @param area1   area of y faces
 /// @param area2   area of z faces
 /// @param q0      Godunuv state on x faces
+/// @param q1      Godunuv state on y faces
 /// @param vol     cell volume
 ///
     void mol_consup(const amrex::Box& bx,
@@ -425,6 +415,9 @@
 #endif
 #if AMREX_SPACEDIM <= 2
                     amrex::Array4<amrex::Real const> const& q0,
+#if AMREX_SPACEDIM == 2
+                    amrex::Array4<amrex::Real const> const& q1,
+#endif
 #endif
                     amrex::Array4<amrex::Real const> const& vol);
 
@@ -603,7 +596,7 @@
                              amrex::Real cdtdx_t1, amrex::Real cdtdx_t2);
 
 ///
-/// Reconstruct the primtive state as parabola, integrate under them,
+/// Reconstruct the primitive state as parabola, integrate under them,
 /// and perform the characteristic tracing to get the interface states.
 /// This is for the CTU hydrodynamics scheme.
 ///
@@ -634,7 +627,7 @@
                    const amrex::Real dt);
 
 ///
-/// Reconstruct the primtive state as pieceeise linear, integrate under them,
+/// Reconstruct the primitive state as pieceeise linear, integrate under them,
 /// and perform the characteristic tracing to get the interface states.
 /// This is for the CTU hydrodynamics scheme.
 ///
@@ -665,7 +658,7 @@
                    const amrex::Real dt);
 
 ///
-/// Reconstruct the primtive state as parabola, integrate under them,
+/// Reconstruct the primitive state as parabola, integrate under them,
 /// and perform the characteristic tracing to get the interface states.
 /// This is for the CTU radiation hydrodynamics scheme.
 ///
@@ -711,9 +704,6 @@
 /// @param dt      timestep
 ///
     void consup_hydro(const amrex::Box& bx,
-#ifdef SHOCK_VAR
-                      amrex::Array4<amrex::Real const> const& shk,
-#endif
                       amrex::Array4<amrex::Real> const& U_new,
                       amrex::Array4<amrex::Real> const& flux0,
                       amrex::Array4<amrex::Real const> const& qx,
@@ -798,9 +788,6 @@
 
 
     void scale_flux(const amrex::Box& bx,
-#if AMREX_SPACEDIM == 1
-                    amrex::Array4<amrex::Real const> const& qint,
-#endif
                     amrex::Array4<amrex::Real> const& flux,
                     amrex::Array4<amrex::Real const> const& area,
                     const amrex::Real dt);

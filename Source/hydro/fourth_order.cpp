@@ -68,6 +68,7 @@ Castro::fourth_interfaces(const Box& bx,
       }
     });
 
+#if AMREX_SPACEDIM >= 2
   } else if (idir == 1) {
 
     // this loop is over interfaces
@@ -109,7 +110,9 @@ Castro::fourth_interfaces(const Box& bx,
       }
 
     });
+#endif
 
+#if AMREX_SPACEDIM == 3
   } else if (idir == 2) {
 
     // this loop is over interfaces
@@ -151,6 +154,8 @@ Castro::fourth_interfaces(const Box& bx,
       }
 
     });
+#endif
+
   }
 }
 
@@ -260,7 +265,7 @@ Castro::states(const Box& bx,
             Real d3a_min = amrex::min(d3am1, d3a0, d3ap1, d3ap2);
             Real d3a_max = amrex::max(d3am1, d3a0, d3ap1, d3ap2);
 
-            if (C3 * amrex::max(std::abs(d3a_min), std::abs(d3a_max)) <=
+            if (C3 * std::max(std::abs(d3a_min), std::abs(d3a_max)) <=
                 (d3a_max - d3a_min)) {
               // limit
               if (dafm*dafp < 0.0_rt) {
@@ -348,6 +353,7 @@ Castro::states(const Box& bx,
 
     }
 
+#if AMREX_SPACEDIM >= 2
   } else if (idir == 1) {
 
     if (limit_fourth_order == 0) {
@@ -426,7 +432,7 @@ Castro::states(const Box& bx,
             Real d3a_min = amrex::min(d3am1, d3a0, d3ap1, d3ap2);
             Real d3a_max = amrex::max(d3am1, d3a0, d3ap1, d3ap2);
 
-            if (C3 * amrex::max(std::abs(d3a_min), std::abs(d3a_max)) <=
+            if (C3 * std::max(std::abs(d3a_min), std::abs(d3a_max)) <=
                 (d3a_max - d3a_min)) {
               // limit
               if (dafm*dafp < 0.0_rt) {
@@ -512,7 +518,9 @@ Castro::states(const Box& bx,
       });
 
     }
+#endif
 
+#if AMREX_SPACEDIM == 3
   } else if (idir == 2) {
 
     if (limit_fourth_order == 0) {
@@ -590,7 +598,7 @@ Castro::states(const Box& bx,
             Real d3a_min = amrex::min(d3am1, d3a0, d3ap1, d3ap2);
             Real d3a_max = amrex::max(d3am1, d3a0, d3ap1, d3ap2);
 
-            if (C3 * amrex::max(std::abs(d3a_min), std::abs(d3a_max)) <=
+            if (C3 * std::max(std::abs(d3a_min), std::abs(d3a_max)) <=
                 (d3a_max - d3a_min)) {
               // limit
               if (dafm*dafp < 0.0_rt) {
@@ -674,6 +682,7 @@ Castro::states(const Box& bx,
       });
 
     }
+#endif
 
   }
 

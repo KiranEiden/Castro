@@ -1,5 +1,5 @@
-#ifndef CASTRO_DIFFUSION_H
-#define CASTRO_DIFFUSION_H
+#ifndef DIFFUSION_H
+#define DIFFUSION_H
 
 #include <AMReX_AmrLevel.H>
 #include <AMReX_MLLinOp.H>
@@ -36,7 +36,7 @@ public:
 ///
 /// @param jobInfoFile
 ///
-  void output_job_info_params(std::ostream& jobInfoFile);
+  static void output_job_info_params(std::ostream& jobInfoFile);
 
 
 ///
@@ -87,20 +87,6 @@ protected:
 
   std::array<amrex::MLLinOp::BCType,AMREX_SPACEDIM> mlmg_lobc;
   std::array<amrex::MLLinOp::BCType,AMREX_SPACEDIM> mlmg_hibc;
-
-#if (AMREX_SPACEDIM < 3)
-///
-/// @param level
-/// @param cc
-///
-  void   weight_cc(int level,amrex::MultiFab& cc);
-
-///
-/// @param level
-/// @param cc
-///
-  void unweight_cc(int level,amrex::MultiFab& cc);
-#endif
 
 
 ///

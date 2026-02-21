@@ -186,7 +186,7 @@ Castro::react_state(MultiFab& s, MultiFab& r, Real time, Real dt, const int stra
     MultiFab tmp_mask_mf;
     const MultiFab& mask_mf = mask_covered_zones ? getLevel(level+1).build_fine_mask() : tmp_mask_mf;
 
-#if defined(AMREX_USE_GPU)
+#ifdef AMREX_USE_GPU
     Gpu::Buffer<int> d_num_failed({0});
     auto* p_num_failed = d_num_failed.data();
 #endif
@@ -203,14 +203,16 @@ Castro::react_state(MultiFab& s, MultiFab& r, Real time, Real dt, const int stra
         auto U = s.array(mfi);
         auto reactions = r.array(mfi);
         auto weights = store_burn_weights ? burn_weights.array(mfi) : Array4<Real>{};
-        const auto mask = mask_covered_zones ? mask_mf.array(mfi) : Array4<Real>{};
+        Array4<Real> empty_arr{};
+        const auto& mask = mask_covered_zones ? mask_mf.array(mfi) : empty_arr;
 
         const auto dx = geom.CellSizeArray();
 #ifdef MODEL_PARSER
         const auto problo = geom.ProbLoArray();
+        const auto geomdata = geom.data();
 #endif
 
-#if defined(AMREX_USE_GPU)
+#ifdef AMREX_USE_GPU
         ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
 #else
         LoopOnCpu(bx, [&] (int i, int j, int k)
@@ -269,7 +271,7 @@ Castro::react_state(MultiFab& s, MultiFab& r, Real time, Real dt, const int stra
 
 #ifdef MODEL_PARSER
             if (drive_initial_convection) {
-                Real rr[3] = {0.0_rt};
+                GpuArray<Real, 3> rr = {0.0_rt};
 
                 rr[0] = problo[0] + dx[0] * (static_cast<Real>(i) + 0.5_rt) - problem::center[0];
 #if AMREX_SPACEDIM >= 2
@@ -284,7 +286,7 @@ Castro::react_state(MultiFab& s, MultiFab& r, Real time, Real dt, const int stra
                 if (domain_is_plane_parallel) {
                     dist = rr[AMREX_SPACEDIM-1];
                 } else {
-                    dist = std::sqrt(rr[0] * rr[0] + rr[1] * rr[1] + rr[2] * rr[2]);
+                    dist = distance(geomdata, rr);
                 }
 
                 burn_state.T_fixed = interpolate(dist, model::itemp);
@@ -360,7 +362,7 @@ Castro::react_state(MultiFab& s, MultiFab& r, Real time, Real dt, const int stra
 
                     if (store_burn_weights) {
 
-                        if (jacobian == 1) {
+                        if (integrator_rp::jacobian == 1) {
                             weights(i,j,k,strang_half) = amrex::max(1.0_rt, static_cast<Real>(burn_state.n_rhs + 2 * burn_state.n_jac));
                         } else {
                             // the RHS evals for the numerical differencing in the Jacobian are already accounted for in n_rhs
@@ -404,7 +406,7 @@ Castro::react_state(MultiFab& s, MultiFab& r, Real time, Real dt, const int stra
 
             }
 
-#if defined(AMREX_USE_GPU)
+#ifdef AMREX_USE_GPU
             if (burn_failed) {
                 Gpu::Atomic::Add(p_num_failed, burn_failed);
             }
@@ -413,12 +415,17 @@ Castro::react_state(MultiFab& s, MultiFab& r, Real time, Real dt, const int stra
 #endif
         });
 
-#if defined(AMREX_USE_HIP)
+#ifdef AMREX_USE_HIP
         Gpu::streamSynchronize(); // otherwise HIP may fail to allocate the necessary resources.
 #endif
+
+#ifdef ALLOW_GPU_PRINTF
+        std::fflush(nullptr);
+#endif
+
     }
 
-#if defined(AMREX_USE_GPU)
+#ifdef AMREX_USE_GPU
     num_failed = *(d_num_failed.copyToHost());
 #endif
 
@@ -443,14 +450,16 @@ Castro::react_state(MultiFab& s, MultiFab& r, Real time, Real dt, const int stra
     if (verbose > 0)
     {
         const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-        Real      run_time = ParallelDescriptor::second() - strt_time;
+        amrex::Real run_time = ParallelDescriptor::second() - strt_time;
+        amrex::Real llevel = level;
 
 #ifdef BL_LAZY
         Lazy::QueueReduction( [=] () mutable {
 #endif
         ParallelDescriptor::ReduceRealMax(run_time,IOProc);
 
-        amrex::Print() << "Castro::react_state() time = " << run_time << " on level " << level << "\n" << "\n";
+        amrex::Print() << "Castro::react_state() time = " << run_time
+                       << " on level " << llevel << "\n" << "\n";
 #ifdef BL_LAZY
         });
 #endif
@@ -527,13 +536,15 @@ Castro::react_state(Real time, Real dt)
 
     int burn_success = 1;
 
-#if defined(AMREX_USE_GPU)
+#ifdef AMREX_USE_GPU
     Gpu::Buffer<int> d_num_failed({0});
     auto* p_num_failed = d_num_failed.data();
 #endif
     int num_failed = 0;
 
-    // why no omp here?
+#ifdef _OPENMP
+#pragma omp parallel reduction(+:num_failed)
+#endif
     for (MFIter mfi(S_new, TilingIfNotGPU()); mfi.isValid(); ++mfi)
     {
         const Box& bx = mfi.growntilebox(ng);
@@ -548,14 +559,18 @@ Castro::react_state(Real time, Real dt)
         auto I     = SDC_react.array(mfi);
         auto react_src = reactions.array(mfi);
         auto weights = store_burn_weights ? burn_weights.array(mfi) : Array4<Real>{};
-        const auto mask = mask_covered_zones ? mask_mf.array(mfi) : Array4<Real>{};
+        Array4<Real> empty_arr{};
+        const auto& mask = mask_covered_zones ? mask_mf.array(mfi) : empty_arr;
 
         int lsdc_iteration = sdc_iteration;
 
         const auto dx = geom.CellSizeArray();
+#ifdef MODEL_PARSER
         const auto problo = geom.ProbLoArray();
+        const auto geomdata = geom.data();
+#endif
 
-#if defined(AMREX_USE_GPU)
+#ifdef AMREX_USE_GPU
         ParallelFor(bx, [=] AMREX_GPU_DEVICE (int i, int j, int k)
 #else
         LoopOnCpu(bx, [&] (int i, int j, int k)
@@ -607,7 +622,7 @@ Castro::react_state(Real time, Real dt)
 
 #ifdef MODEL_PARSER
             if (drive_initial_convection) {
-                Real rr[3] = {0.0_rt};
+                GpuArray<Real, 3> rr = {0.0_rt};
 
                 rr[0] = problo[0] + dx[0] * (static_cast<Real>(i) + 0.5_rt) - problem::center[0];
 #if AMREX_SPACEDIM >= 2
@@ -622,7 +637,7 @@ Castro::react_state(Real time, Real dt)
                 if (domain_is_plane_parallel) {
                     dist = rr[AMREX_SPACEDIM-1];
                 } else {
-                    dist = std::sqrt(rr[0] * rr[0] + rr[1] * rr[1] + rr[2] * rr[2]);
+                    dist = distance(geomdata, rr);
                 }
 
                 burn_state.T_fixed = interpolate(dist, model::itemp);
@@ -729,17 +744,17 @@ Castro::react_state(Real time, Real dt)
                     // part.
 
                     // rho enuc
-                    react_src(i,j,k,0) = (U_new(i,j,k,UEINT) - U_old(i,j,k,UEINT)) / dt - burn_state.ydot_a[SEINT];
+                    react_src(i,j,k,0) = (U_new(i,j,k,UEINT) - U_old(i,j,k,UEINT)) * dtInv - burn_state.ydot_a[SEINT];
 
                     if (store_omegadot) {
                         // rho omegadot_k
                         for (int n = 0; n < NumSpec; ++n) {
-                            react_src(i,j,k,1+n) = (U_new(i,j,k,UFS+n) - U_old(i,j,k,UFS+n)) / dt - burn_state.ydot_a[SFS+n];
+                            react_src(i,j,k,1+n) = (U_new(i,j,k,UFS+n) - U_old(i,j,k,UFS+n)) * dtInv - burn_state.ydot_a[SFS+n];
                         }
 #if NAUX_NET > 0
                         // rho auxdot_k
                         for (int n = 0; n < NumAux; ++n) {
-                            react_src(i,j,k,1+n+NumSpec) = (U_new(i,j,k,UFX+n) - U_old(i,j,k,UFX+n)) / dt - burn_state.ydot_a[SFX+n];
+                            react_src(i,j,k,1+n+NumSpec) = (U_new(i,j,k,UFX+n) - U_old(i,j,k,UFX+n)) * dtInv - burn_state.ydot_a[SFX+n];
                         }
 #endif
                     }
@@ -748,7 +763,7 @@ Castro::react_state(Real time, Real dt)
 
                     if (store_burn_weights) {
 
-                         if (jacobian == 1) {
+                         if (integrator_rp::jacobian == 1) {
                              weights(i,j,k,lsdc_iteration) = amrex::max(1.0_rt, static_cast<Real>(burn_state.n_rhs + 2 * burn_state.n_jac));
                          } else {
                              // the RHS evals for the numerical differencing in the Jacobian are already accounted for in n_rhs
@@ -796,7 +811,7 @@ Castro::react_state(Real time, Real dt)
                 }
             }
 
-#if defined(AMREX_USE_GPU)
+#ifdef AMREX_USE_GPU
             if (burn_failed) {
                 Gpu::Atomic::Add(p_num_failed, burn_failed);
             }
@@ -805,12 +820,17 @@ Castro::react_state(Real time, Real dt)
 #endif
         });
 
-#if defined(AMREX_USE_HIP)
+#ifdef AMREX_USE_HIP
         Gpu::streamSynchronize(); // otherwise HIP may fail to allocate the necessary resources.
 #endif
+
+#ifdef ALLOW_GPU_PRINTF
+       std::fflush(nullptr);
+#endif
+
     }
 
-#if defined(AMREX_USE_GPU)
+#ifdef AMREX_USE_GPU
     num_failed = *(d_num_failed.copyToHost());
 #endif
 
@@ -838,15 +858,17 @@ Castro::react_state(Real time, Real dt)
 
         amrex::Print() << "... Leaving burner on level " << level << " after completing full timestep of burning." << std::endl << std::endl;
 
-        const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-        Real      run_time = ParallelDescriptor::second() - strt_time;
+        const int IOProc = ParallelDescriptor::IOProcessorNumber();
+        amrex::Real run_time = ParallelDescriptor::second() - strt_time;
+        amrex::Real llevel = level;
 
 #ifdef BL_LAZY
         Lazy::QueueReduction( [=] () mutable {
 #endif
         ParallelDescriptor::ReduceRealMax(run_time, IOProc);
 
-        amrex::Print() << "Castro::react_state() time = " << run_time << " on level " << level << std::endl << std::endl;
+        amrex::Print() << "Castro::react_state() time = " << run_time
+                       << " on level " << llevel << std::endl << std::endl;
 #ifdef BL_LAZY
         });
 #endif
@@ -860,7 +882,7 @@ Castro::react_state(Real time, Real dt)
 
 
 bool
-Castro::valid_zones_to_burn(MultiFab& State)
+Castro::valid_zones_to_burn(const MultiFab& State)
 {
 
     // The default values of the limiters are 0 and 1.e200, respectively.

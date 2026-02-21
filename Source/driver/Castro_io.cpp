@@ -7,7 +7,6 @@
 #include <iostream>
 #include <string>
 #include <ctime>
-#include <filesystem>
 
 #include <AMReX_Utility.H>
 #include <Castro.H>
@@ -249,12 +248,14 @@ Castro::restart (Amr&     papa,
              orig_domain.setSmall(d,lo);
              orig_domain.setBig(d,hi);
 
+#if AMREX_SPACEDIM >= 2
              d = 1;
              dlen =  domain.size()[d];
              lo =   dlen/4    ;
              hi = 3*dlen/4 - 1;
              orig_domain.setSmall(d,lo);
              orig_domain.setBig(d,hi);
+#endif
 
           } else {
              for (int d = 0; d < AMREX_SPACEDIM; d++)
@@ -521,14 +522,12 @@ Castro::setPlotVariables ()
     parent->deleteStatePlotVar(desc_lst[Source_Type].name(i));
   }
 
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
   if (time_integration_method == SimplifiedSpectralDeferredCorrections) {
       for (int i = 0; i < desc_lst[Simplified_SDC_React_Type].nComp(); i++) {
           parent->deleteStatePlotVar(desc_lst[Simplified_SDC_React_Type].name(i));
       }
   }
-#endif
 #endif
 
 }
@@ -565,8 +564,13 @@ Castro::writeJobInfo (const std::string& dir, const Real io_time)
   jobInfoFile << "hydro tile size:         " << hydro_tile_size << "\n";
 
   jobInfoFile << "\n";
+#ifdef AMREX_USE_GPU
+  jobInfoFile << "GPU time used since start of simulation (GPU-hours): " <<
+    getCPUTime()/3600.0;
+#else
   jobInfoFile << "CPU time used since start of simulation (CPU-hours): " <<
     getCPUTime()/3600.0;
+#endif
 
   jobInfoFile << "\n\n";
 
@@ -579,7 +583,7 @@ Castro::writeJobInfo (const std::string& dir, const Real io_time)
   jobInfoFile << "output date / time: "
               << std::put_time(std::localtime(&now), "%c\n") << "\n";
 
-  jobInfoFile << "output dir:         " << std::filesystem::current_path() << "\n";
+  jobInfoFile << "output dir:         " << amrex::FileSystem::CurrentPath() << "\n";
 
   jobInfoFile << "I/O time (s):       " << io_time << "\n";
 
@@ -608,6 +612,10 @@ Castro::writeJobInfo (const std::string& dir, const Real io_time)
   jobInfoFile << "build machine: " << buildInfoGetBuildMachine() << "\n";
   jobInfoFile << "build dir:     " << buildInfoGetBuildDir() << "\n";
   jobInfoFile << "AMReX dir:     " << buildInfoGetAMReXDir() << "\n";
+
+  jobInfoFile << "\n";
+
+  jobInfoFile << "make flags:    " << buildInfoGetMakeFlags() << "\n";
 
   jobInfoFile << "\n";
 
@@ -754,7 +762,38 @@ Castro::writeJobInfo (const std::string& dir, const Real io_time)
   }
   jobInfoFile << "\n";
 
+  jobInfoFile << "     amr.n_error_buf:      ";
+  for (int lev = 1; lev <= max_level; lev++) {
+    int errbuf = parent->nErrorBuf(lev-1);
+    jobInfoFile << errbuf << " ";
+  }
+  jobInfoFile << "\n";
+
+  jobInfoFile << "     amr.regrid_int:       ";
+  for (int lev = 1; lev <= max_level; lev++) {
+    int regridint = parent->regridInt(lev-1);
+    jobInfoFile << regridint << " ";
+  }
+  jobInfoFile << "\n";
+
+  jobInfoFile << "     amr.blocking_factor:  ";
+  for (int lev = 1; lev <= max_level; lev++) {
+    IntVect bf = parent->blockingFactor(lev-1);
+    jobInfoFile << bf[0] << " ";
+  }
+  jobInfoFile << "\n";
+
+  jobInfoFile << "     amr.max_grid_size:    ";
+  for (int lev = 1; lev <= max_level; lev++) {
+    IntVect mgs = parent->maxGridSize(lev-1);
+    jobInfoFile << mgs[0] << " ";
+  }
   jobInfoFile << "\n\n";
+
+  jobInfoFile << "     amr.subcycling_mode: " << parent->subcyclingMode();
+
+  jobInfoFile << "\n\n";
+
 
 
   // species info
@@ -812,8 +851,6 @@ void
 Castro::writeBuildInfo ()
 {
   std::string PrettyLine = std::string(78, '=') + "\n";
-  std::string OtherLine = std::string(78, '-') + "\n";
-  std::string SkipSpace = std::string(8, ' ');
 
   // build information
   std::cout << PrettyLine;
@@ -827,10 +864,19 @@ Castro::writeBuildInfo ()
 
   std::cout << "\n";
 
+  std::cout << "make flags:    " << buildInfoGetMakeFlags() << "\n";
+
+  std::cout << "\n";
+
   std::cout << "COMP:          " << buildInfoGetComp() << "\n";
   std::cout << "COMP version:  " << buildInfoGetCompVersion() << "\n";
 
   std::cout << "\n";
+
+#ifdef AMREX_USE_CUDA
+  std::cout << "CUDA version:  " << buildInfoGetCUDAVersion() << "\n";
+  std::cout << "\n";
+#endif
 
   std::cout << "C++ compiler:  " << buildInfoGetCXXName() << "\n";
   std::cout << "C++ flags:     " << buildInfoGetCXXFlags() << "\n";
@@ -983,7 +1029,7 @@ Castro::plotFileOutput(const std::string& dir,
             os << desc_lst[typ].name(comp) << '\n';
         }
 
-        for (auto &name : derive_names)
+        for (const auto &name : derive_names)
         {
             const DeriveRec* rec = derive_lst.get(name);
             if (rec->numDerive() > 1) {
@@ -1063,9 +1109,7 @@ Castro::plotFileOutput(const std::string& dir,
     // The name is relative to the directory containing the Header file.
     //
     static const std::string BaseName = "/Cell";
-    char buf[64];
-    sprintf(buf, "Level_%d", level);
-    std::string Level = buf;
+    std::string Level = "Level_" + std::to_string(level);
     //
     // Now for the full pathname of that directory.
     //

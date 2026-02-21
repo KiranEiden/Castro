@@ -10,7 +10,7 @@ jobs:
   wdmerger_collision-2d:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -48,5 +48,5 @@ jobs:
       - name: Check the extrema
         run: |
           cd Exec/science/wdmerger
-          ../../../external/amrex/Tools/Plotfile/fextrema.gnu.ex plt00095 > fextrema.out
+          ../../../external/amrex/Tools/Plotfile/fextrema.gnu.ex plt00086 > fextrema.out
           diff fextrema.out ci-benchmarks/wdmerger_collision_2D.out

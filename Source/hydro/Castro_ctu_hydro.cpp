@@ -52,10 +52,10 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 
   MultiFab& S_new = get_new_data(State_Type);
 
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
-  MultiFab& SDC_react_source = get_new_data(Simplified_SDC_React_Type);
-#endif
+  MultiFab tmp_SDC_mf;
+  MultiFab& SDC_react_source = castro::time_integration_method == SimplifiedSpectralDeferredCorrections ?
+                               get_new_data(Simplified_SDC_React_Type) : tmp_SDC_mf;
 #endif
 
   // we will treat the hydro source as any other source term
@@ -242,7 +242,10 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 #endif
 
 #if AMREX_SPACEDIM < 3
-      Array4<Real const> const dLogArea_arr = (dLogArea[0]).array(mfi);
+      Array4<Real const> const dLogAreaX_arr = (dLogArea[0]).array(mfi);
+#endif
+#if AMREX_SPACEDIM == 2
+      Array4<Real const> const dLogAreaY_arr = (dLogArea[1]).array(mfi);
 #endif
 
       const Box& xbx = amrex::surroundingNodes(bx, 0);
@@ -259,16 +262,13 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
       shk.resize(obx, 1);
       fab_size += shk.nBytes();
 
-      Array4<Real> const shk_arr = shk.array();
-
       // Multidimensional shock detection
-      // Used for the hybrid Riemann solver
 
-#ifdef SHOCK_VAR
-      bool compute_shock = true;
-#else
-      bool compute_shock = false;
-#endif
+      // this is a local shock variable used only for the Riemann
+      // solver -- this will never be used to update the value in the
+      // conserved state.
+
+      Array4<Real> const shk_arr = shk.array();
 
       // get the primitive variable hydro sources
 
@@ -285,7 +285,7 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
           hydro::src_to_prim(i, j, k, dt, U_old_arr, q_arr, old_src_arr, src_corr_arr, src_q_arr);
       });
 
-      if (hybrid_riemann == 1 || compute_shock) {
+      if (hybrid_riemann == 1) {
         shock(obx, q_arr, old_src_arr, shk_arr);
       }
       else {
@@ -345,8 +345,11 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 #if AMREX_SPACEDIM == 3
                        qzm_arr, qzp_arr,
 #endif
-#if (AMREX_SPACEDIM < 3)
-                       dLogArea_arr,
+#if AMREX_SPACEDIM < 3
+                       dLogAreaX_arr,
+#endif
+#if AMREX_SPACEDIM == 2
+                       dLogAreaY_arr,
 #endif
                        dt);
 
@@ -364,7 +367,10 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
                            qzm_arr, qzp_arr,
 #endif
 #if AMREX_SPACEDIM < 3
-                           dLogArea_arr,
+                           dLogAreaX_arr,
+#endif
+#if AMREX_SPACEDIM == 2
+                           dLogAreaY_arr,
 #endif
                            dt);
 #else
@@ -380,7 +386,10 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
                        qzm_arr, qzp_arr,
 #endif
 #if AMREX_SPACEDIM < 3
-                       dLogArea_arr,
+                       dLogAreaX_arr,
+#endif
+#if AMREX_SPACEDIM == 2
+                       dLogAreaY_arr,
 #endif
                        dt);
 #endif
@@ -447,19 +456,18 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
       fab_size += pradial.nBytes();
 #endif
 
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
-      Array4<Real> const sdc_src_arr = SDC_react_source.array(mfi);
-#endif
+      auto sdc_src_arr = castro::time_integration_method == SimplifiedSpectralDeferredCorrections ?
+                         SDC_react_source.array(mfi) : Array4<Real const>{};
 #endif
 
 #if AMREX_SPACEDIM == 1
 
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
-      add_sdc_source_to_states(xbx, 0, dt,
-                               qxm_arr, qxp_arr, sdc_src_arr);
-#endif
+      if (castro::time_integration_method == SimplifiedSpectralDeferredCorrections) {
+          add_sdc_source_to_states(xbx, 0, dt,
+                                   qxm_arr, qxp_arr, sdc_src_arr);
+      }
 #endif
 
       // compute the fluxes through the x-interface
@@ -582,12 +590,11 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 
       // solve the final Riemann problem axross the x-interfaces
 
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
-      add_sdc_source_to_states(xbx, 0, dt,
-                               ql_arr, qr_arr, sdc_src_arr);
-#endif
-
+      if (castro::time_integration_method == SimplifiedSpectralDeferredCorrections) {
+          add_sdc_source_to_states(xbx, 0, dt,
+                                   ql_arr, qr_arr, sdc_src_arr);
+      }
 #endif
 
       cmpflx_plus_godunov(xbx,
@@ -627,11 +634,11 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 
       // solve the final Riemann problem axross the y-interfaces
 
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
-      add_sdc_source_to_states(ybx, 1, dt,
-                               ql_arr, qr_arr, sdc_src_arr);
-#endif
+      if (castro::time_integration_method == SimplifiedSpectralDeferredCorrections) {
+          add_sdc_source_to_states(ybx, 1, dt,
+                                   ql_arr, qr_arr, sdc_src_arr);
+      }
 #endif
 
       cmpflx_plus_godunov(ybx,
@@ -945,11 +952,11 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 
       reset_edge_state_thermo(xbx, qr_arr);
 
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
-      add_sdc_source_to_states(xbx, 0, dt,
-                               ql_arr, qr_arr, sdc_src_arr);
-#endif
+      if (castro::time_integration_method == SimplifiedSpectralDeferredCorrections) {
+          add_sdc_source_to_states(xbx, 0, dt,
+                                   ql_arr, qr_arr, sdc_src_arr);
+      }
 #endif
 
 
@@ -1024,11 +1031,11 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 
       reset_edge_state_thermo(ybx, qr_arr);
 
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
-      add_sdc_source_to_states(ybx, 1, dt,
-                               ql_arr, qr_arr, sdc_src_arr);
-#endif
+      if (castro::time_integration_method == SimplifiedSpectralDeferredCorrections) {
+          add_sdc_source_to_states(ybx, 1, dt,
+                                   ql_arr, qr_arr, sdc_src_arr);
+      }
 #endif
 
 
@@ -1105,11 +1112,11 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 
       reset_edge_state_thermo(zbx, qr_arr);
 
-#ifdef SIMPLIFIED_SDC
 #ifdef REACTIONS
-      add_sdc_source_to_states(zbx, 2, dt,
-                               ql_arr, qr_arr, sdc_src_arr);
-#endif
+      if (castro::time_integration_method == SimplifiedSpectralDeferredCorrections) {
+          add_sdc_source_to_states(zbx, 2, dt,
+                                   ql_arr, qr_arr, sdc_src_arr);
+      }
 #endif
 
       // compute the final z fluxes F^z
@@ -1193,9 +1200,6 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 #endif
 
       consup_hydro(bx,
-#ifdef SHOCK_VAR
-                   shk_arr,
-#endif
                    update_arr,
                    flx_arr, qx_arr,
 #if AMREX_SPACEDIM >= 2
@@ -1265,35 +1269,26 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
         Array4<Real> const flux_arr = (flux[idir]).array();
         Array4<Real const> const area_arr = (area[idir]).array(mfi);
 
-        scale_flux(nbx,
-#if AMREX_SPACEDIM == 1
-                   qex_arr,
-#endif
-                   flux_arr, area_arr, dt);
+        scale_flux(nbx, flux_arr, area_arr, dt);
 
 #ifdef RADIATION
         Array4<Real> const rad_flux_arr = (rad_flux[idir]).array();
         scale_rad_flux(nbx, rad_flux_arr, area_arr, dt);
 #endif
 
-        if (idir == 0) {
 #if AMREX_SPACEDIM <= 2
+        // get the scaled radial pressure -- we need to treat this specially
+
+        if (idir == 0 && !mom_flux_has_p(0, 0, coord)) {
             Array4<Real> pradial_fab = pradial.array();
-#endif
 
-            // get the scaled radial pressure -- we need to treat this specially
-#if AMREX_SPACEDIM <= 2
-            if (!mom_flux_has_p(0, 0, coord)) {
-                amrex::ParallelFor(nbx,
-                [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-                {
-                    pradial_fab(i,j,k) = qex_arr(i,j,k,GDPRES) * dt;
-                });
-            }
-
-#endif
+            amrex::ParallelFor(nbx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+                pradial_fab(i,j,k) = qex_arr(i,j,k,GDPRES) * dt;
+            });
         }
-
+#endif
         // Store the fluxes from this advance. For simplified SDC integration we
         // only need to do this on the last iteration.
 
@@ -1425,12 +1420,13 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 
 #ifdef RADIATION
   if (radiation->verbose>=1) {
+      amrex::Real llevel = level;
 #ifdef BL_LAZY
     Lazy::QueueReduction( [=] () mutable {
 #endif
        ParallelDescriptor::ReduceIntMax(nstep_fsp, ParallelDescriptor::IOProcessorNumber());
        if (ParallelDescriptor::IOProcessor() && nstep_fsp > 0) {
-         std::cout << "Radiation f-space advection on level " << level
+         std::cout << "Radiation f-space advection on level " << llevel
                    << " takes as many as " << nstep_fsp;
          if (nstep_fsp == 1) {
            std::cout<< " substep.\n";
@@ -1488,15 +1484,17 @@ Castro::construct_ctu_hydro_source(Real time, Real dt)  // NOLINT(readability-co
 
   if (verbose > 0)
     {
-      const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-      Real      run_time = ParallelDescriptor::second() - strt_time;
+      const int IOProc = ParallelDescriptor::IOProcessorNumber();
+      amrex::Real run_time = ParallelDescriptor::second() - strt_time;
+      amrex::Real llevel = level;
 
 #ifdef BL_LAZY
       Lazy::QueueReduction( [=] () mutable {
 #endif
         ParallelDescriptor::ReduceRealMax(run_time,IOProc);
 
-        amrex::Print() << "Castro::construct_ctu_hydro_source() time = " << run_time << " on level " << level << "\n" << "\n";
+        amrex::Print() << "Castro::construct_ctu_hydro_source() time = " << run_time
+                       << " on level " << llevel << "\n" << "\n";
 #ifdef BL_LAZY
         });
 #endif

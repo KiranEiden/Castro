@@ -8,6 +8,7 @@
 #include <advection_util.H>
 
 #include <fourth_center_average.H>
+#include <flatten.H>
 
 using namespace amrex;
 
@@ -117,19 +118,23 @@ Castro::construct_mol_hydro_source(Real time, Real dt, MultiFab& A_update)
         Array4<Real> const flatn_arr = flatn.array();
 
         if (first_order_hydro == 1) {
-          amrex::ParallelFor(obx,
-          [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-          {
-            flatn_arr(i,j,k) = 0.0;
-          });
+            amrex::ParallelFor(obx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+                flatn_arr(i,j,k) = 0.0;
+            });
         } else if (use_flattening == 1) {
-          uflatten(obx, q_arr, flatn_arr, QPRES);
+            amrex::ParallelFor(obx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+                flatn_arr(i,j,k) = hydro::flatten(i, j, k, q_arr, QPRES);
+            });
         } else {
-          amrex::ParallelFor(obx,
-          [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-          {
-            flatn_arr(i,j,k) = 1.0;
-          });
+            amrex::ParallelFor(obx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+                flatn_arr(i,j,k) = 1.0;
+            });
         }
 
 
@@ -142,7 +147,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, MultiFab& A_update)
         // for well-balancing and shock detection, we need to
         // primitive variable source terms
 
-        const Box& qbx = amrex::grow(bx, NUM_GROW_SRC);
         src_q.resize(srcbx, NQSRC);
         Array4<Real> const src_q_arr = src_q.array();
 
@@ -615,6 +619,9 @@ Castro::construct_mol_hydro_source(Real time, Real dt, MultiFab& A_update)
 #endif
 #if AMREX_SPACEDIM <= 2
                    qe[0].array(),
+#if AMREX_SPACEDIM == 2
+                   qe[1].array(),
+#endif
 #endif
                    volume.array(mfi));
 
@@ -651,9 +658,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, MultiFab& A_update)
 
         Array4<Real> pradial_fab = pradial.array();
 #endif
-#if AMREX_SPACEDIM == 1
-        Array4<Real> const qex_arr = qe[0].array();
-#endif
 
         for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
 
@@ -662,27 +666,19 @@ Castro::construct_mol_hydro_source(Real time, Real dt, MultiFab& A_update)
           Array4<Real> const flux_arr = (flux[idir]).array();
           Array4<Real const> const area_arr = (area[idir]).array(mfi);
 
-          scale_flux(nbx,
-#if AMREX_SPACEDIM == 1
-                     qex_arr,
-#endif
-                     flux_arr, area_arr, dt);
-
-
-          if (idir == 0) {
-            // get the scaled radial pressure -- we need to treat this specially
-            Array4<Real> const qex_fab = qe[idir].array();
-            const int prescomp = GDPRES;
-
+          scale_flux(nbx, flux_arr, area_arr, dt);
 
 #if AMREX_SPACEDIM <= 2
-            if (!mom_flux_has_p(0, 0, coord)) {
-              amrex::ParallelFor(nbx,
-              [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
-              {
-                pradial_fab(i,j,k) = qex_fab(i,j,k,prescomp) * dt;
-              });
-            }
+          // get the scaled radial pressure -- we need to treat this specially
+
+          if (idir == 0 && !mom_flux_has_p(0, 0, coord)) {
+            Array4<Real> const qex_arr = qe[idir].array();
+
+            amrex::ParallelFor(nbx,
+            [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept
+            {
+                pradial_fab(i,j,k) = qex_arr(i,j,k,GDPRES) * dt;
+            });
 #endif
           }
         }
@@ -738,8 +734,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, MultiFab& A_update)
 
     if (verbose > 0)
     {
-        const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-        Real      run_time = ParallelDescriptor::second() - strt_time;
+        const int IOProc = ParallelDescriptor::IOProcessorNumber();
+        amrex::Real run_time = ParallelDescriptor::second() - strt_time;
 
 #ifdef BL_LAZY
         Lazy::QueueReduction( [=] () mutable {

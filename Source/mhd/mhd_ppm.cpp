@@ -101,7 +101,7 @@ Castro::ppm_mhd(const Box& bx,
 
     // do the parabolic reconstruction and compute the integrals under
     // the characteristic waves
-    Real s[5];
+    Real s[nslp];
     Real flat = flatn(i,j,k);
     Real sm;
     Real sp;
@@ -117,29 +117,7 @@ Castro::ppm_mhd(const Box& bx,
 
       int v = cvars[n];
 
-      if (idir == 0) {
-        s[im2] = q_arr(i-2,j,k,v);
-        s[im1] = q_arr(i-1,j,k,v);
-        s[i0]  = q_arr(i,j,k,v);
-        s[ip1] = q_arr(i+1,j,k,v);
-        s[ip2] = q_arr(i+2,j,k,v);
-
-      } else if (idir == 1) {
-        s[im2] = q_arr(i,j-2,k,v);
-        s[im1] = q_arr(i,j-1,k,v);
-        s[i0]  = q_arr(i,j,k,v);
-        s[ip1] = q_arr(i,j+1,k,v);
-        s[ip2] = q_arr(i,j+2,k,v);
-
-      } else {
-        s[im2] = q_arr(i,j,k-2,v);
-        s[im1] = q_arr(i,j,k-1,v);
-        s[i0]  = q_arr(i,j,k,v);
-        s[ip1] = q_arr(i,j,k+1,v);
-        s[ip2] = q_arr(i,j,k+2,v);
-
-      }
-
+      load_stencil(q_arr, idir, i, j, k, v, s);
       ppm_reconstruct(s, flat, sm, sp);
 
       Real Ipt = 0.0;
@@ -200,8 +178,8 @@ Castro::ppm_mhd(const Box& bx,
       smhd[IEIGN_BTT] = q_zone(QW);
 
       // cross-talk of normal magnetic field direction
-      for (int n = 0; n < NEIGN; n++) {
-        smhd[n] = smhd[n] * (Bx(i+1,j,k) - Bx(i,j,k)) / dx[idir];
+      for (auto & source : smhd) {
+          source *= (Bx(i+1,j,k) - Bx(i,j,k)) / dx[idir];
       }
 
     } else if (idir == 1) {
@@ -209,8 +187,8 @@ Castro::ppm_mhd(const Box& bx,
       smhd[IEIGN_BTT] = q_zone(QW);
 
       // cross-talk of normal magnetic field direction
-      for (int n = 0; n < NEIGN; n++) {
-        smhd[n] = smhd[n] * (By(i,j+1,k) - By(i,j,k)) / dx[idir];
+      for (auto & source : smhd) {
+          source *= (By(i,j+1,k) - By(i,j,k)) / dx[idir];
       }
 
     } else {
@@ -218,8 +196,8 @@ Castro::ppm_mhd(const Box& bx,
       smhd[IEIGN_BTT] = q_zone(QV);
 
       // cross-talk of normal magnetic field direction
-      for (int n = 0; n < NEIGN; n++) {
-        smhd[n] = smhd[n] * (Bz(i,j,k+1) - Bz(i,j,k)) / dx[idir];
+      for (auto & source : smhd) {
+          source *= (Bz(i,j,k+1) - Bz(i,j,k)) / dx[idir];
       }
     }
 
@@ -354,29 +332,6 @@ Castro::ppm_mhd(const Box& bx,
 
       int v = QFS+n;
 
-      if (idir == 0) {
-        s[im2] = q_arr(i-2,j,k,v);
-        s[im1] = q_arr(i-1,j,k,v);
-        s[i0]  = q_arr(i,j,k,v);
-        s[ip1] = q_arr(i+1,j,k,v);
-        s[ip2] = q_arr(i+2,j,k,v);
-
-      } else if (idir == 1) {
-        s[im2] = q_arr(i,j-2,k,v);
-        s[im1] = q_arr(i,j-1,k,v);
-        s[i0]  = q_arr(i,j,k,v);
-        s[ip1] = q_arr(i,j+1,k,v);
-        s[ip2] = q_arr(i,j+2,k,v);
-
-      } else {
-        s[im2] = q_arr(i,j,k-2,v);
-        s[im1] = q_arr(i,j,k-1,v);
-        s[i0]  = q_arr(i,j,k,v);
-        s[ip1] = q_arr(i,j,k+1,v);
-        s[ip2] = q_arr(i,j,k+2,v);
-
-      }
-
       Real Ips;
       Real Ims;
 
@@ -392,6 +347,7 @@ Castro::ppm_mhd(const Box& bx,
         un = q_arr(i,j,k,QW);
       }
 
+      load_stencil(q_arr, idir, i, j, k, v, s);
       ppm_reconstruct(s, flat, sm, sp);
       ppm_int_profile_single(sm, sp, s[i0], un, dtdx, Ips, Ims);
 
@@ -505,4 +461,3 @@ Castro::ppm_mhd(const Box& bx,
 
   });
 }
-
