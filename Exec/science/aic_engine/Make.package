@@ -1,0 +1,18 @@
+ifeq ($(USE_MASS_SOURCE), TRUE)
+    DEFINES += -DUSE_MASS_SOURCE
+endif
+
+ifeq ($(USE_SIN_DEP), TRUE)
+    DEFINES += -DUSE_SIN_DEP
+endif
+
+ifeq ($(USE_COS_DEP), TRUE)
+    DEFINES += -DUSE_COS_DEP
+endif
+
+ifeq ($(USE_EQ_DEP), TRUE)
+    DEFINES += -DUSE_EQ_DEP
+endif
+
+CEXE_headers += aic_model_data.H
+CEXE_sources += aic_model_data.cpp
