@@ -1,0 +1,351 @@
+#ifndef problem_initialize_state_data_H
+#define problem_initialize_state_data_H
+
+#include <prob_parameters.H>
+#include <aic_model_data.H>
+#include <eos.H>
+#include <AMReX_Random.H>
+
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+void problem_initialize_state_data (int i, int j, int k,
+                                    Array4<Real> const& state,
+                                    const GeometryData& geomdata)
+{
+    const Real* dx = geomdata.CellSize();
+    const Real* problo = geomdata.ProbLo();
+    const Real* probhi = geomdata.ProbHi();
+    
+    Real r = problo[0] + dx[0] * (static_cast<Real>(i) + 0.5_rt) - problem::center[0];
+    Real z = problo[1] + dx[1] * (static_cast<Real>(j) + 0.5_rt) - problem::center[1];
+    
+    const Real model_r_max = aic_model_data::model_r_out(NR_MODEL-1);
+    const Real model_z_max = aic_model_data::model_z_out(NZ_MODEL-1);
+    const bool model_cell = (r <= model_r_max) && (z <= model_z_max) && (z >= -model_z_max);
+    
+    Real rho, temp, velr, velz;
+    rho = temp = velr = velz = 0.0_rt;
+    
+    if(model_cell)
+    {
+        constexpr int numf = 4;
+        const int field_arr[numf] =
+        {
+            aic_model_data::idens, aic_model_data::itemp,
+            aic_model_data::ivelr, aic_model_data::ivelz
+        };
+        Real interp_state[numf];
+        
+        aic_model_data::interpolate_reg_grid(r, z, field_arr, interp_state, numf);
+        
+        rho = interp_state[0];
+        temp = interp_state[1];
+        velr = interp_state[2];
+        velz = interp_state[3];
+    }
+    
+    const bool amb_cell = !model_cell || (rho <= problem::rho_amb) || (temp <= problem::T_amb);
+    
+    if(amb_cell)
+    {
+        rho = problem::rho_amb;
+        temp = problem::T_amb;
+        velr = velz = 0.0_rt;
+    }
+    
+    state(i, j, k, URHO) = rho;
+    state(i, j, k, UTEMP) = temp;
+    state(i, j, k, UMX) = velr*rho;
+    state(i, j, k, UMY) = velz*rho;
+    state(i, j, k, UMZ) = 0.0_rt;
+    
+    for(int ispec = 0; ispec < NumSpec; ispec++)
+    {
+        state(i, j, k, UFS+ispec) = 0.0_rt;
+    }
+    
+    if(amb_cell)
+    {
+        state(i, j, k, UFS) = rho;
+    }
+    else
+    {
+        state(i, j, k, UFS+1) = rho;
+    }
+    
+    eos_t eos_state;
+    eos_state.rho = state(i, j, k, URHO);
+    eos_state.T = state(i, j, k, UTEMP);
+    for(int ispec = 0; ispec < NumSpec; ispec++)
+    {
+        eos_state.xn[ispec] = state(i, j, k, UFS+ispec) / state(i, j, k, URHO);
+    }
+    eos(eos_input_rt, eos_state);
+    
+    state(i, j, k, UEINT) = state(i, j, k, URHO) * eos_state.e;
+    state(i, j, k, UEDEN) = state(i, j, k, UEINT) + 0.5_rt *
+            (state(i, j, k, UMX) * state(i, j, k, UMX) +
+             state(i, j, k, UMY) * state(i, j, k, UMY) +
+             state(i, j, k, UMZ) * state(i, j, k, UMZ)) / state(i, j, k, URHO);
+    
+    //constexpr Real Msun = 1.989e33_rt;
+    //constexpr Real clight = 2.998e10_rt;
+    //constexpr Real km_to_cm = 1.e5_rt;
+    
+    //Real n = problem::n;
+    //Real d = problem::d;
+    //Real s = problem::s;
+    
+    //int dens_ang_var = problem::dens_ang_var;
+    
+    //Real R_t  = problem::f_r*problem::r_0;
+    //Real M_ej = problem::m_0*Msun;
+    //Real M_csm = M_ej*problem::eta;
+    //Real R_csm = problem::r_0;
+    //Real R_w = problem::R_w;
+    
+    //Real xi = problem::xi_bo;
+    
+    //Real v_t = problem::beta*clight;
+    
+    ////  Real  tau_0 = problem::kap*M_csm/R_csm/R_csm;
+    //Real mpi = 3.14159e0_rt;
+    ////  BL_ASSERT(problem::tau < tau_0/(4.e0_rt*mpi));
+    
+    //Real delt = problem::delt;//0.5*(sqrt(3.e0_rt*(tau_0/problem::tau)/mpi-3.0e0_rt)-3.0e0_rt);
+    
+    //Real R_out = (1.0_rt+delt)*problem::r_0;
+    
+    ////Real v_t = problem::r_0/problem::t_0;
+    
+    //Real rho_0 = 5.01410457e19_rt * problem::Mdot / problem::v_w / (R_csm*R_csm);
+    //Real rho_a = problem::f_a*rho_0;
+    
+    //Real x = problo[0] + dx[0] * (static_cast<Real>(i) + 0.5_rt) - problem::center[0];
+    
+    //Real y = 0.0;
+    //#if AMREX_SPACEDIM >= 2
+    //y = problo[1] + dx[1] * (static_cast<Real>(j) + 0.5_rt) - problem::center[1];
+    //#endif
+    
+    //Real z = 0.0;
+    //#if AMREX_SPACEDIM == 3
+    //z = problo[2] + dx[2] * (static_cast<Real>(k) + 0.5_rt) - problem::center[2];
+    //#endif
+    
+    //Real r = sqrt(x*x + y*y + z*z);
+    //#if AMREX_SPACEDIM == 3
+    //Real theta = acos(z/r);
+    //Real phi = acos(x / sqrt(x*x + y*y));
+    //#endif
+    
+    //Real k_fluct_1 = problem::wn_fluct_1;
+    //Real A_fluct_1 = problem::amp_fluct_1;
+    //Real k_fluct_2 = problem::wn_fluct_2;
+    //Real A_fluct_2 = problem::amp_fluct_2;
+    //bool add_fluct = (k_fluct_1 > 0.0_rt) && (A_fluct_1 > 0.0_rt);
+    //add_fluct = add_fluct || ((k_fluct_2 > 0.0_rt) && (A_fluct_2 > 0.0_rt));
+    //bool rand_fluct = problem::rand_seed > 0;
+    //Real drho_1 = 0.0_rt;
+    //Real drho_2 = 0.0_rt;
+    
+    //Real rho = 0.0_rt;
+    //Real T = 0.0_rt;
+    //Real v = 0.0_rt;
+    
+    //Real rho0_ej;
+    //if(problem::pl_ej > 0)
+    //{
+        //Real c_rho = 1.0_rt / (3.0_rt - d) + (1.0_rt - pow(problem::f_r, n-3)) / (n - 3.0_rt);
+        //rho0_ej = M_ej / (4.0_rt*M_PI*pow(R_t,3)) / c_rho;
+    //}
+    //else
+    //{
+        //rho0_ej = 3.0_rt/(4.0_rt*M_PI)*M_ej/pow(R_csm,3);
+    //}
+    
+    //Real rho0_csm;
+    //if(problem::f_r < 1.0_rt)
+    //{
+      //rho0_csm = rho0_ej * pow(problem::f_r, n);
+    //}
+    //else
+    //{
+      //rho0_csm = rho0_ej * pow(problem::f_r, d);
+    //}
+    //Real p = -log(rho0_csm/rho_a) / log(R_csm/R_out);
+    
+    ////Real rho0_csm = (3.0_rt - s)/(4.0_rt*M_PI)
+             ////(pow(1.0_rt + delt,3-s)-1.0_rt)
+             //// * M_csm/pow(R_csm,3);
+    ////Real rho0_bo = rho0_csm*pow(R_out/R_csm,-s);
+    
+    //// ejecta portion
+    //if(r < R_csm)
+    //{
+      //rho = rho0_ej;
+      //if(dens_ang_var == 1)
+      //{
+        //Real sin_th = x/r;
+        //rho *= 1.5_rt * sin_th*sin_th;
+        //if(rho < rho_a) rho = rho_a;
+      //}
+      //else if(dens_ang_var == 2)
+      //{
+        //Real cos_th = y/r;
+        //rho *= 3.0_rt * cos_th*cos_th;
+        //if(rho < rho_a) rho = rho_a;
+      //}
+    
+      //if(problem::pl_ej > 0)
+      //{
+        //if( r < R_t) rho *= pow(r/R_t,-d);
+        //else rho *= pow(r/R_t,-n);
+    
+        //T = problem::T_ej;
+        //v = v_t*(r/R_t);
+      //}
+      
+    //#if AMREX_SPACEDIM == 3
+      //if(add_fluct)
+      //{
+        //drho_1 = rho * (exp(A_fluct_1 * sin(k_fluct_1 * 2.0_rt*M_PI * r/R_csm) * sin(k_fluct_1 * theta) *
+            //sin(k_fluct_1 * phi)) - 1.0_rt);
+        //drho_2 = rho * (exp(A_fluct_2 * sin(k_fluct_2 * 2.0_rt*M_PI * r/R_csm) * sin(k_fluct_2 * theta) *
+            //sin(k_fluct_2 * phi)) - 1.0_rt);
+        //if(rand_fluct)
+        //{
+          //drho_1 *= amrex::Random();
+          //drho_2 *= amrex::Random();
+        //}
+        //rho += 0.5 * (drho_1 + drho_2);
+      //}
+    //#endif
+    //}
+    //else // CSM/ambient portion
+    //{
+      //if(r < R_out)
+      //{
+        //rho = rho0_csm * pow(r/R_csm,-p);
+      //}
+      //else
+      //{
+        //rho = rho_a * pow(r/R_out,-s);
+      //}
+      
+      ////if(r < R_out)
+      ////{
+        ////rho = rho0_csm*pow(r/R_csm,-s);
+        ////state(i,j,k,UFX) = rho;
+      ////}
+      ////else
+      ////{
+        ////rho = rho0_csm*pow(1.+delt,-s)*pow(r/R_out,-problem::p);
+        ////state(i,j,k,UFX) = 0.0;
+      ////}
+      ////else
+      ////{
+        ////rho = rho0_csm*pow(1.0_rt+problem::delt,-s)*exp(-0.5e0_rt*pow(r-R_out,2)/pow(xi*problem::delt*R_csm,2));
+      ////}
+       
+      //rho = max(rho,1.01*small_dens);
+      //T = problem::T_0;
+      //v = problem::v_csm*km_to_cm;
+    //}
+    
+    //state(i,j,k,URHO) = rho;
+    //state(i,j,k,UTEMP) = T;
+    
+    //// need to convert into 3d vector
+    //Real v_x = 0.0_rt;
+    //Real v_y = 0.0_rt;
+    //Real v_z = 0.0_rt;
+    //#if AMREX_SPACEDIM == 1 // spherical
+    //v_x = v;
+    //#elif AMREX_SPACEDIM == 2 // cylindrical
+    //v_x = v * x/r;
+    //v_y = v * y/r;
+    //#elif AMREX_SPACEDIM == 3 // cartesian
+    //v_x = v * x/r;
+    //v_y = v * y/r;
+    //v_z = v * z/r;
+    //#endif
+    //state(i,j,k,UMX) = rho*v_x;
+    //state(i,j,k,UMY) = rho*v_y;
+    //state(i,j,k,UMZ) = rho*v_z;
+    
+    //// Enclosed mass
+    //Real M_enc;
+    //if(r < R_t)
+    //{
+        //M_enc = 4.0_rt*M_PI*r*r*r * rho / (3.0_rt - d);
+    //}
+    //else if(r < R_csm)
+    //{
+        //M_enc = 4.0_rt*M_PI*R_t*R_t*R_t * rho0_ej;
+        //M_enc = M_enc / (3.0_rt - d) + (4.0_rt*M_PI*r*r*r * rho - M_enc) / (3.0_rt - n);
+    //}
+    //else
+    //{
+        //// Only need to check if the mass is greater than the ejecta mass
+        //M_enc = M_ej + 1e33_rt;
+    //}
+    //const Real M_enc_frac = M_enc / M_ej;
+    //constexpr Real blend_scale = 1.809560341263549e-03;
+    
+    //for(int ispec = 0; ispec < NumSpec; ++ispec)
+    //{
+        //state(i,j,k,UFS+ispec) = 0.0_rt;
+    //}
+    
+    //Real blend_fac;
+    
+    //if(M_enc_frac > 0.375_rt)
+    //{
+        //state(i,j,k,UFS) = 1.0_rt*rho;
+        //blend_fac = exp((0.375_rt - M_enc_frac) / blend_scale);
+        //state(i,j,k,UFS+1) = blend_fac*rho;
+    //}
+    //else if(M_enc_frac > 0.125_rt)
+    //{
+        //state(i,j,k,UFS+1) = 1.0_rt*rho;
+        //blend_fac = exp((M_enc_frac - 0.375_rt) / blend_scale);
+        //state(i,j,k,UFS) = blend_fac*rho;
+        //blend_fac = exp((0.125_rt - M_enc_frac) / blend_scale);
+        //state(i,j,k,UFS+2) = blend_fac*rho;
+    //}
+    //else
+    //{
+        //state(i,j,k,UFS+2) = 1.0_rt*rho;
+        //blend_fac = exp((M_enc_frac - 0.125_rt) / blend_scale);
+        //state(i,j,k,UFS+1) = blend_fac*rho;
+    //}
+    
+    //Real sum = 0.0_rt;
+    //for(int ispec = 0; ispec < NumSpec; ++ispec)
+    //{
+        //sum += state(i,j,k,UFS+ispec);
+    //}
+    //for(int ispec = 0; ispec < NumSpec; ++ispec)
+    //{
+        //state(i,j,k,UFS+ispec) /= sum / rho;
+    //}
+    
+    //eos_t eos_state;
+    //eos_state.rho = rho;
+    //eos_state.T = T;
+    //for(int ispec = 0; ispec < NumSpec; ++ispec)
+    //{
+        //eos_state.xn[ispec] = state(i,j,k,UFS+ispec) / state(i,j,k,URHO);
+    //}
+    //eos(eos_input_rt,eos_state);
+    
+    //state(i,j,k,UEINT) = state(i,j,k,URHO) * eos_state.e;
+    //state(i,j,k,UEDEN) = state(i,j,k,UEINT) + 0.5_rt *
+                //(state(i,j,k,UMX)*state(i,j,k,UMX) +
+                 //state(i,j,k,UMY)*state(i,j,k,UMY) +
+                 //state(i,j,k,UMZ)*state(i,j,k,UMZ)) / state(i,j,k,URHO);
+    
+    //state(i,j,k,UTEMP) = T;
+}
+
+#endif
