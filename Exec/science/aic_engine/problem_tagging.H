@@ -50,7 +50,7 @@ void problem_tagging(int i, int j, int k,
     {
         tag(i, j, k) = TagBox::SET;
     }
-    else if(r < rr_dep && level < buffer_tagging_level)
+    if(r < rr_dep*refine_scale_buf && level < buffer_tagging_level)
     {
         tag(i, j, k) = TagBox::SET;
     }
@@ -64,7 +64,7 @@ void problem_tagging(int i, int j, int k,
     {
         tag(i, j, k) = TagBox::SET;
     }
-    else if(X_wind > 1e-20_rt && level < bubble_tagging_level)
+    if(X_wind > 1e-20_rt && level < bubble_tagging_level)
     {
         tag(i, j, k) = TagBox::SET;
     }

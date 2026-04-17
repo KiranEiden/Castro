@@ -1,5 +1,5 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
-max_step = 1
+max_step = 999999
 stop_time = 1.02374933137e+04
 
 # PROBLEM SIZE & GEOMETRY
@@ -51,8 +51,8 @@ amr.n_error_buf = 8
 problem.ejecta_tagging_level = 2
 problem.buffer_tagging_level = 3
 problem.bubble_tagging_level = 4
-problem.refine_scale_buf = 1.1
-problem.refine_scale_bub = 1.1
+problem.refine_scale_buf = 1.2
+problem.refine_scale_bub = 1.2
 
 # amr.refinement_indicators = abar
 
@@ -81,7 +81,7 @@ problem.rho_amb = 1e-20
 problem.T_amb = 275.0
 
 # DEPOSITION REGION PARAMETERS
-problem.r_dep = 2e9
+problem.r_dep = 4e9
 problem.depscale = 2.0
 problem.p_dep = 20.59158637920377
 problem.frac_lum_base = 0.861676557631727
