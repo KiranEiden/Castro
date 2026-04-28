@@ -32,6 +32,11 @@ namespace aic_model_data
     extern AMREX_GPU_MANAGED Array1D<Real, 0, NZ_MODEL-1> model_z_out;
     extern AMREX_GPU_MANAGED Array3D<Real, 0, nvars_model-1, 0, NR_MODEL-1, 0, NZ_MODEL-1> model_data;
     
+    // Used for filling underdense regions
+    extern AMREX_GPU_MANAGED Array1D<int, 0, 1> jfill;
+    extern AMREX_GPU_MANAGED Array1D<int, 0, NZ_MODEL-1> imax_fill;
+    extern AMREX_GPU_MANAGED Array1D<Real, 0, 1> fill_vals;
+    
     AMREX_INLINE AMREX_GPU_HOST_DEVICE
     void interpolate_reg_grid(const Real r, const Real z,
                               const int* field_arr, Real* out,

@@ -52,6 +52,30 @@ void problem_initialize()
         }
     }
     
+    jfill(0) = NZ_MODEL-1;
+    jfill(1) = 0;
+    for(int j = 0; j < NZ_MODEL; j++) imax_fill(j) = NR_MODEL-1;
+    fill_vals(0) = 1.0e40_rt;
+    fill_vals(1) = 1.0e40_rt;
+    
+    for(int i = 0; i < NR_MODEL; i++)
+    {
+        for(int j = 0; j < NZ_MODEL; j++)
+        {
+            const Real rho = model_data(idens, i, j);
+            const Real temp = model_data(itemp, i, j);
+            
+            if(rho >= problem::rho_amb)
+            {
+                if(j < jfill(0)) jfill(0) = j;
+                if(j > jfill(1)) jfill(1) = j;
+                if(i < imax_fill(j)) imax_fill(j) = i;
+                if(rho < fill_vals(0)) fill_vals(0) = rho;
+                if(temp < fill_vals(1)) fill_vals(1) = temp;
+            }
+        }
+    }
+    
     H5Fclose(h5file);
 }
 
