@@ -7,33 +7,33 @@
 #include <AMReX_Random.H>
 
 AMREX_GPU_HOST_DEVICE AMREX_INLINE
-Real model_index_to_coord(const int idx, const int dir)
+Real model_index_to_min_coord(const int idx, const int dir)
 {
     if(dir == 0)
     {
         if(idx == 0)
         {
-            return 0.5_rt * (aic_model_data::model_x_min(0) + aic_model_data::model_r_out(idx));
+            return aic_model_data::model_x_min(0);
         }
         else
         {
-            return 0.5_rt * (aic_model_data::model_r_out(idx-1) + aic_model_data::model_r_out(idx));
+            return aic_model_data::model_r_out(idx-1);
         }
     }
     else if(dir == 1)
     {
         if(idx == 0)
         {
-            return 0.5_rt * (aic_model_data::model_x_min(1) + aic_model_data::model_z_out(idx));
+            return aic_model_data::model_x_min(1);
         }
         else
         {
-            return 0.5_rt * (aic_model_data::model_z_out(idx-1) + aic_model_data::model_z_out(idx));
+            return aic_model_data::model_z_out(idx-1);
         }
     }
     else
     {
-        amrex::Abort("Invalid direction passed to `model_index_to_coord` function.");
+        amrex::Abort("Invalid direction passed to `model_index_to_min_coord` function.");
         return 0.0_rt;
     }
 }
@@ -97,8 +97,8 @@ void problem_initialize_state_data (int i, int j, int k,
     
     const bool amb_cell = !model_cell || (rho <= problem::rho_amb) || (temp <= problem::T_amb);
     
-    const Real zfill_min = model_index_to_coord(aic_model_data::jfill(0), 1);
-    const Real zfill_max = model_index_to_coord(aic_model_data::jfill(1), 1);
+    const Real zfill_min = model_index_to_min_coord(aic_model_data::jfill(0), 1);
+    const Real zfill_max = model_index_to_min_coord(aic_model_data::jfill(1), 1);
     const int jmodel = coord_to_model_index(z, 1);
     Real rfill_max;
     if(jmodel < aic_model_data::jfill(0) || jmodel > aic_model_data::jfill(1))
@@ -107,7 +107,7 @@ void problem_initialize_state_data (int i, int j, int k,
     }
     else
     {
-        rfill_max = model_index_to_coord(aic_model_data::imax_fill(jmodel), 0);
+        rfill_max = model_index_to_min_coord(aic_model_data::imax_fill(jmodel), 0);
     }
     
     const bool fill_cell = amb_cell && (z > zfill_min) && (z < zfill_max) && (r < rfill_max);
