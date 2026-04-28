@@ -96,21 +96,25 @@ void problem_initialize_state_data (int i, int j, int k,
     }
     
     const bool amb_cell = !model_cell || (rho <= problem::rho_amb) || (temp <= problem::T_amb);
+    bool fill_cell = false;
     
-    const Real zfill_min = model_index_to_min_coord(aic_model_data::jfill(0), 1);
-    const Real zfill_max = model_index_to_min_coord(aic_model_data::jfill(1), 1);
-    const int jmodel = coord_to_model_index(z, 1);
-    Real rfill_max;
-    if(jmodel < aic_model_data::jfill(0) || jmodel > aic_model_data::jfill(1))
+    if(problem::fill_underdense)
     {
-        rfill_max = problo[0];
+        const Real zfill_min = model_index_to_min_coord(aic_model_data::jfill(0), 1);
+        const Real zfill_max = model_index_to_min_coord(aic_model_data::jfill(1), 1);
+        const int jmodel = coord_to_model_index(z, 1);
+        Real rfill_max;
+        if(jmodel < aic_model_data::jfill(0) || jmodel > aic_model_data::jfill(1))
+        {
+            rfill_max = problo[0];
+        }
+        else
+        {
+            rfill_max = model_index_to_min_coord(aic_model_data::imax_fill(jmodel), 0);
+        }
+        
+        fill_cell = amb_cell && (z > zfill_min) && (z < zfill_max) && (r < rfill_max);
     }
-    else
-    {
-        rfill_max = model_index_to_min_coord(aic_model_data::imax_fill(jmodel), 0);
-    }
-    
-    const bool fill_cell = amb_cell && (z > zfill_min) && (z < zfill_max) && (r < rfill_max);
     
     if(amb_cell)
     {

@@ -10,6 +10,9 @@ rho_amb  real  1e-20  y
 # Ambient medium temperature (should be >= ambient medium temperature in the model file)
 T_amb  real  275  y
 
+# Whether or not to fill underdense regions near vertical axis with higher density material
+fill_underdense  bool  true  y
+
 ## MAGNETAR PARAMETERS ##
 
 # Magnetar turn-on time (in s)
