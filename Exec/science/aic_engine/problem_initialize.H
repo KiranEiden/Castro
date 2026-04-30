@@ -13,6 +13,28 @@
 
 using namespace aic_model_data;
 
+// Update function for fill values
+typedef Real (*fv_updater)(const Real, const Real, const int);
+
+AMREX_INLINE
+Real get_min(const Real a, const Real b, const int n)
+{
+    if(a < b)
+    {
+        return a;
+    }
+    else
+    {
+        return b;
+    }
+}
+
+AMREX_INLINE
+Real get_avg(const Real a, const Real b, const int n)
+{
+    return (n*a + b) / (n + 1);
+}
+
 AMREX_INLINE
 void read_aic_data(const hid_t& file, const std::string& dset_name, void* buf)
 {
@@ -55,25 +77,44 @@ void problem_initialize()
     jfill(0) = NZ_MODEL-1;
     jfill(1) = 0;
     for(int j = 0; j < NZ_MODEL; j++) imax_fill(j) = NR_MODEL-1;
-    fill_vals(0) = 1.0e40_rt;
-    fill_vals(1) = 1.0e40_rt;
+    
+    fv_updater fvu = nullptr;
+    int n = 0;
+    if(problem::fill_underdense == 1)
+    {
+        fill_vals(0) = 1.0e40_rt;
+        fill_vals(1) = 1.0e40_rt;
+        fvu = get_min;
+    }
+    else if(problem::fill_underdense == 2)
+    {
+        fill_vals(0) = 0.0_rt;
+        fill_vals(1) = 0.0_rt;
+        fvu = get_avg;
+    }
+    else if(problem::fill_underdense > 2)
+    {
+        amrex::Abort("'fill_underdense' option not implemented.");
+    }
     
     for(int i = 0; i < NR_MODEL; i++)
     {
         for(int j = 0; j < NZ_MODEL; j++)
         {
             const Real rho = model_data(idens, i, j);
-            const Real temp = model_data(itemp, i, j);
+            const Real temp = model_data(itemp, i, j); 
             
             if(rho >= problem::rho_amb)
             {
                 if(j < jfill(0)) jfill(0) = j;
                 if(j > jfill(1)) jfill(1) = j;
                 if(i < imax_fill(j)) imax_fill(j) = i;
-                if(rho < fill_vals(0)) fill_vals(0) = rho;
-                if(temp < fill_vals(1)) fill_vals(1) = temp;
+                fill_vals(0) = fvu(fill_vals(0), rho, n);
+                fill_vals(1) = fvu(fill_vals(1), temp, n);
             }
         }
+        
+        n++;
     }
     
     H5Fclose(h5file);
