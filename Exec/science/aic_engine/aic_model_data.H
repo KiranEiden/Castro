@@ -17,7 +17,7 @@ namespace aic_model_data
     // Note: We assume 2D cylindrical for now
     
     // Number of state components + indices for each
-    constexpr int nvars_model = 5 + NumSpec + NumAux;
+    constexpr int nvars_model = 4 + NumSpec + NumAux;
     constexpr int idens = 0;
     constexpr int itemp = 1;
     constexpr int ivelr = 2;
@@ -66,7 +66,7 @@ namespace aic_model_data
         const Real z1 = model_z_out(j1) - 0.5_rt*dz;
         
         const Real rwgt = (r - r0) / (r1 - r0); 
-        const Real zwgt = (z - z0) / (z1 - z0); 
+        const Real zwgt = (z - z0) / (z1 - z0);
         
         for(int ifield = 0; ifield < numf; ifield++)
         {

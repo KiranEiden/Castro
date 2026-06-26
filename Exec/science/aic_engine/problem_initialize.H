@@ -74,6 +74,36 @@ void problem_initialize()
         }
     }
     
+    Real comp_arr[NR_MODEL*NZ_MODEL*NumSpec];
+    const std::string comp_dset_name = "comp";
+    read_aic_data(h5file, comp_dset_name.c_str(), comp_arr);
+ 
+    for(int i = 0; i < NR_MODEL; i++)
+    {
+        for(int j = 0; j < NZ_MODEL; j++)
+        {
+            for(int k = 0; k < NumSpec; k++)
+            {
+                model_data(ispec+k, i, j) = comp_arr[i*NZ_MODEL*NumSpec + j*NumSpec + k];
+            }
+        }
+    }
+    
+    std::string aux_dset_names[2] = {"Abar", "Y_e"};
+    
+    for(int k = 0; k < NumAux; k++)
+    {
+        read_aic_data(h5file, aux_dset_names[k].c_str(), data_arr);
+        
+        for(int i = 0; i < NR_MODEL; i++)
+        {
+            for(int j = 0; j < NZ_MODEL; j++)
+            {
+                model_data(iaux+k, i, j) = data_arr[i*NZ_MODEL + j];
+            }
+        }
+    }
+    
     jfill(0) = NZ_MODEL-1;
     jfill(1) = 0;
     for(int j = 0; j < NZ_MODEL; j++) imax_fill(j) = NR_MODEL-1;

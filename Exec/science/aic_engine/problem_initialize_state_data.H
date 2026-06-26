@@ -77,22 +77,23 @@ void problem_initialize_state_data (int i, int j, int k,
     Real rho, temp, velr, velz;
     rho = temp = velr = velz = 0.0_rt;
     
+    constexpr int numf = aic_model_data::nvars_model;
+    int field_arr[numf];
+    Real interp_state[numf];
+        
     if(model_cell)
     {
-        constexpr int numf = 4;
-        const int field_arr[numf] =
+        for(int ifield = 0; ifield < numf; ifield++)
         {
-            aic_model_data::idens, aic_model_data::itemp,
-            aic_model_data::ivelr, aic_model_data::ivelz
-        };
-        Real interp_state[numf];
-        
+            field_arr[ifield] = ifield;
+        }
+
         aic_model_data::interpolate_reg_grid(r, z, field_arr, interp_state, numf);
         
-        rho = interp_state[0];
-        temp = interp_state[1];
-        velr = interp_state[2];
-        velz = interp_state[3];
+        rho = interp_state[aic_model_data::idens];
+        temp = interp_state[aic_model_data::itemp];
+        velr = interp_state[aic_model_data::ivelr];
+        velz = interp_state[aic_model_data::ivelz];
     }
     
     const bool amb_cell = !model_cell || (rho <= problem::rho_amb) || (temp <= problem::T_amb);
@@ -146,10 +147,28 @@ void problem_initialize_state_data (int i, int j, int k,
     if(amb_cell)
     {
         state(i, j, k, UFS) = rho;
+
+        if(NumAux > 0)
+        {
+            state(i, j, k, UFX + AuxZero::iabar) = rho*aion[0];
+        }
+        if(NumAux > 1)
+        {
+            state(i, j, k, UFX + AuxZero::iye) = rho*(zion[0] / aion[0]);
+        }
     }
     else
     {
-        state(i, j, k, UFS+1) = rho;
+        Real* interp_spec = &interp_state[aic_model_data::ispec];
+        Real* interp_aux = &interp_state[aic_model_data::iaux];
+        for(int ispec = 0; ispec < NumSpec; ispec++)
+        {
+            state(i, j, k, UFS+ispec) = rho * interp_spec[ispec];
+        }
+        for(int iaux = 0; iaux < NumAux; iaux++)
+        {
+            state(i, j, k, UFX+iaux) = rho * interp_aux[iaux];
+        }
     }
     
     eos_t eos_state;
@@ -158,6 +177,10 @@ void problem_initialize_state_data (int i, int j, int k,
     for(int ispec = 0; ispec < NumSpec; ispec++)
     {
         eos_state.xn[ispec] = state(i, j, k, UFS+ispec) / state(i, j, k, URHO);
+    }
+    for(int iaux = 0; iaux < NumAux; iaux++)
+    {
+        eos_state.aux[iaux] = state(i, j, k, UFX+iaux) / state(i, j, k, URHO);
     }
     eos(eos_input_rt, eos_state);
     

@@ -24,7 +24,7 @@ CASTRO_HOME = ../../..
 EOS_DIR     := gamma_law
 
 NETWORK_DIR := general_null
-NETWORK_INPUTS := H_ej.net
+NETWORK_INPUTS := aic_LLH.net
 #Opacity_dir = csm
 Bpack   := ./Make.package
 Blocs   := .
