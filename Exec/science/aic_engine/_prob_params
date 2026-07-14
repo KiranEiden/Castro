@@ -68,6 +68,9 @@ buffer_tagging_level    integer   2   y
 # Number of additional refinement levels for the bubble
 bubble_tagging_level    integer   3   y
 
+# Number of additional refinement levels for the deposition region
+depreg_tagging_level    integer   4   y
+
 # Refine scale for the intermediate AMR level
 refine_scale_buf   real    1.2    y
 

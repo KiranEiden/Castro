@@ -1,6 +1,7 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
 max_step = 999999
-stop_time = 1.02374933137e+04
+#stop_time = 1.02374933137e+04
+stop_time = 20.0
 
 # PROBLEM SIZE & GEOMETRY
 geometry.is_periodic =  0  0
@@ -48,9 +49,10 @@ amr.derive_plot_vars = ALL
 
 amr.n_error_buf = 8
 
-problem.ejecta_tagging_level = 2
-problem.buffer_tagging_level = 3
-problem.bubble_tagging_level = 4
+problem.ejecta_tagging_level = 1
+problem.buffer_tagging_level = 2
+problem.bubble_tagging_level = 3
+problem.depreg_tagging_level = 4
 problem.refine_scale_buf = 1.2
 problem.refine_scale_bub = 1.2
 
@@ -76,8 +78,8 @@ eos.eos_gamma = 1.3333333333e0
 
 # MODEL FILE AND PARAMETERS
 
-problem.model_file = model_2D_cylindrical_1min.h5
-problem.fill_underdense = 2
+problem.model_file = model_2D_cylindrical_1min_binned.h5
+problem.fill_underdense = 1
 problem.rho_amb = 1e-20
 problem.T_amb = 275.0
 

@@ -46,7 +46,7 @@ void problem_tagging(int i, int j, int k,
     const Real r = sqrt(x*x + y*y + z*z);
     const Real rr_dep = r_dep*depscale*refine_scale_bub;
 
-    if(r < rr_dep && level < bubble_tagging_level)
+    if(r < rr_dep && level < max(bubble_tagging_level, depreg_tagging_level))
     {
         tag(i, j, k) = TagBox::SET;
     }
