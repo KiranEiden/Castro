@@ -126,7 +126,7 @@ if __name__ == "__main__":
                 binned_comp[bin_nuc] += comp[:, :, ispec]
                 spec_binned = True
                 
-        assert spec_binned, "All species in model file must be fall within a bin."
+        assert spec_binned, "All species in model file must fall within a bin."
         
     Abar = 1. / (comp / Ain).sum(axis=2)
     Y_e = (Zin * comp / Ain).sum(axis=2)
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     fout.create_dataset('comp', data=comp_out, dtype='d')
     
     fout.create_dataset('Abar', data=Abar, dtype='d')
-    fout.create_dataset('Y_e', data=Abar, dtype='d')
+    fout.create_dataset('Y_e', data=Y_e, dtype='d')
     
     fin.close()
     fout.close()
