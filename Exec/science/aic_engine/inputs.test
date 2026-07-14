@@ -40,8 +40,8 @@ amr.v                 = 0       # verbosity in Amr.cpp
 #amr.grid_log         = grdlog  # name of grid logging file
 
 # REFINEMENT / REGRIDDING
-amr.max_level       = 4        # maximum level number allowed
-amr.ref_ratio       = 4 4 4 4 2 2 # refinement ratio
+amr.max_level       = 5        # maximum level number allowed
+amr.ref_ratio       = 4 4 4 4 4 2 # refinement ratio
 amr.regrid_int      = 1        # how often to regrid
 amr.blocking_factor = 32       # block factor in grid generation
 amr.max_grid_size   = 256
@@ -49,10 +49,10 @@ amr.derive_plot_vars = ALL
 
 amr.n_error_buf = 8
 
-problem.ejecta_tagging_level = 1
-problem.buffer_tagging_level = 2
-problem.bubble_tagging_level = 3
-problem.depreg_tagging_level = 4
+problem.ejecta_tagging_level = 2
+problem.buffer_tagging_level = 3
+problem.bubble_tagging_level = 4
+problem.depreg_tagging_level = 5
 problem.refine_scale_buf = 1.2
 problem.refine_scale_bub = 1.2
 

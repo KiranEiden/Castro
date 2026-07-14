@@ -1,5 +1,53 @@
 # Changelog
 
+## 26.07
+
+  * work around a ROCm 7.2.0 compiler bug (#3350)
+
+  * `xrb_spherical` : updates and fixes to some plot scripts (#3343,
+    #3358)
+
+  * documentation updates: describe new integrators (#3354)
+
+  * remove an old SDC define from the build system (#3352)
+
+  * `subchandra` : add a network flow plotting script (#3355)
+
+  * bump github checkout action from 6 to 7 (#3356)
+
+  * add new `flame_wave` scaling numbers (#3348)
+
+  * allow for fixed latitude rotation in 2D spherical (#3349)
+
+  * `Sedov` : update analysis scripts (#3347)
+
+  * `nova` : remove unused inputs files + change plotfile frequency
+    (#3346)
+
+## 26.06
+
+  * `xrb_spherical` : add planar slice plot scripts (#3340)
+
+  * `flame` : fix issue in analysis scripts with t = 0 having
+    enuc = 0 (#3338)
+
+  * docs: fix Sphinx equation rendering (#3336)
+
+## 26.05
+
+  * Fix the maximum level of refinement for tagging in various input
+    files (#3138)
+
+  * Add the hybrid-Powell solver as an option for true-SDC (#3310)
+
+  * clarify how to override `CUDA_ARCH` (#3129)
+
+  * remove new / delete in favor of unique pointers (#3333)
+
+  * add `AGENTS.md` file (#3334)
+
+  * add an assert in `define_new_center` to enforce assumptions (#3290)
+
 ## 26.04
 
   * update the burning timestep limiter to know about disabling burning
@@ -2885,4 +2933,3 @@
      reset is now reflected in the ghost cells (this is a more
      consistent behavior).  Previously, the energy was never reset in
      the ghost cells.
-
