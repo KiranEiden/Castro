@@ -169,6 +169,14 @@ void problem_initialize_state_data (int i, int j, int k,
         {
             state(i, j, k, UFX+iaux) = rho * interp_aux[iaux];
         }
+        if(NumAux > 0 && state(i, j, k, UFX + AuxZero::iabar)/rho < 1.0_rt)
+        {
+            state(i, j, k, UFX + AuxZero::iabar) = rho*1.0_rt;
+        }
+        if(NumAux > 1 && state(i, j, k, UFX + AuxZero::iye)/rho < 0.0_rt)
+        {
+            state(i, j, k, UFX + AuxZero::iye) = 0.0_rt;
+        }
     }
     
     eos_t eos_state;
